@@ -1,9 +1,11 @@
 import sys
 import os
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'src')))
+# Add the parent directory to the sys.path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from robot.core_robot import JakaRobot
+from robot.jaka_robot import JakaRobot
+
 from integrations.AIvision_integration import AIVisionIntegration
 
 # Constants
@@ -39,7 +41,7 @@ def move_robot_to_positions(robot, ai_vision):
         robot.control_speed(person_detected)
 
 def main():
-    robot = JakaRobot(ip="192.168.0.219")
+    robot = JakaRobot(ip="192.168.0.220")
 
     robot.login()
     robot.power_on()

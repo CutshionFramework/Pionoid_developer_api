@@ -5,6 +5,7 @@ import json
 import pyaudio
 import vosk
 import spacy #NLP
+#posterior change to openai
 
 class VoiceControl:
     def __init__(self):

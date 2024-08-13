@@ -129,4 +129,5 @@ cython_debug/
 yolov5s.pt
 
 # Custom
-libs_64/ 
+libs_64/
+models/ 

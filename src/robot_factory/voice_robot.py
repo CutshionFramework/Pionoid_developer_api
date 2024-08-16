@@ -4,7 +4,7 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from robot.jaka_robot import JakaRobot
-from integrations.voice_control import VoiceControl
+from integrations.Openai_voice_control import VoiceControl
 
 def handle_robot_commands(robot, command):
     command = command.lower()  # Convert the command to lowercase to make the search case-insensitive

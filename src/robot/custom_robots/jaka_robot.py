@@ -52,8 +52,8 @@ class JakaRobot(core_robot):
     def get_payload(self):
         return self.robot.get_payload()
     
-    def get_robot_state(self):
-        return self.robot.get_robot_state()
+    def get_robot_status(self):
+        return self.robot.get_robot_status()
  
     def get_tcp_position(self):
         return self.robot.get_tcp_position()
@@ -110,7 +110,7 @@ if __name__ == "__main__":
         print("Something happened, the error code is:", ret[0])
     
     # Get robot state
-    ret = robot.get_robot_state()
+    ret = robot.get_robot_status()
     if ret[0] == 0:
         print("The robot state is:", ret[1])
     else:

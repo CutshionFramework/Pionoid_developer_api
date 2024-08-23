@@ -32,7 +32,7 @@ class core_robot(ABC):
         pass
 
     @abstractmethod
-    def get_robot_state(self):
+    def get_robot_status(self):
         pass
 
     @abstractmethod

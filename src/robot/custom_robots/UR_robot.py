@@ -43,7 +43,7 @@ class URRobot(core_robot):
     def isConnected(self):
         self.robot_control.isConnected()
 
-    def joint_move(self, joint_pos, move_mode, is_block, speed):
+    def joint_move(self, joint_pos, move_mode=0, is_block=True, speed=1.0):
         self.robot_control.moveJ(joint_pos, speed)
 
     def moveJ_IK(self, pose, speed=1.05, acceleration=1.4, asynchronous=False):
@@ -108,7 +108,7 @@ class URRobot(core_robot):
     def get_robot_mode(self):
         return self.robot_receive.getRobotMode()
 
-    def get_robot_state(self):
+    def get_robot_status(self):
         return self.robot_receive.getRobotStatus()
 
     def get_actual_digital_output_bits(self):
@@ -170,18 +170,18 @@ if __name__ == "__main__":
     robot = URRobot("192.168.177.128")
 
     # connect dashboard (= jakaZu app)
-    robot.connect()
+    robot.login()
 
     # Move to a specific joint position
     joint_positions_1 = [0.0, -1.57, 0.0, -1.57, 0.0, 0.0]
     joint_positions_2 = [0.5, -1.0, 0.0, -1.0, 0.0, 0.0]
-    robot.moveJ(joint_positions_1)
-    robot.moveJ(joint_positions_2)
+    robot.joint_move(joint_positions_1)
+    robot.joint_move(joint_positions_2)
     
     # Print the current robot state
     print("Current timestamp:", robot.get_timestamp())
     print("Actual joint positions:", robot.get_actual_joint_positions())
-    print("Actual TCP pose:", robot.get_actual_tcp_pose())
+    print("Actual TCP pose:", robot.get_tcp_position())
     print("Robot mode:", robot.get_robot_mode())
     print("Robot status:", robot.get_robot_status())
 

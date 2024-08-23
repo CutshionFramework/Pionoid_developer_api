@@ -17,7 +17,7 @@ def move_robot(robot: core_robot, joint_positions, tcp_position):
     robot.linear_move(tcp_pos=tcp_position, move_mode=0, is_block=True, speed=1.0)
 
 def print_robot_status(robot: core_robot):
-    state = robot.get_robot_state()
+    state = robot.get_robot_status()
     tcp_pos = robot.get_tcp_position()
     print("Robot state:", state)
     print("TCP position:", tcp_pos)

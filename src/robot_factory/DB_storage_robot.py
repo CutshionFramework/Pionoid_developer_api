@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from robot.jaka_robot import JakaRobot
+from src.robot.custom_robots.jaka_robot import JakaRobot
 from integrations.mongodb_storage import MongoDBStorage
 
 def handle_robot_commands(robot, command, storage):

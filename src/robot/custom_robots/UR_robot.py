@@ -1,20 +1,23 @@
+import sys
+import os
 import rtde_control
 import rtde_receive
 import dashboard_client
 import rtde_io
-# from robot.core_robot import core_robot
+# Add the directory containing core_robot to the system path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from core_robot import core_robot
 
-class URRobot():
+class URRobot(core_robot):
     def __init__(self, ip):
-        # super().__init__()  # Initialize the parent class
+        super().__init__()  # Initialize the parent class
         self.robot_control = rtde_control.RTDEControlInterface(ip)
         self.robot_receive = rtde_receive.RTDEReceiveInterface(ip)
         self.robot_dashboard_client = dashboard_client.DashboardClient(ip)
         self.robot_rtde_io = rtde_io.RTDEIOInterface(ip)
-        self.speed = 1.0  # Default speed
 
     # dashboard_client
-    def connect(self):
+    def login(self):
         self.robot_dashboard_client.connect()
 
     def is_connected(self):
@@ -25,10 +28,13 @@ class URRobot():
 
     def power_off(self):
         self.robot_dashboard_client.powerOff()
+    
+    def enable_robot(self):
+        self.robot_dashboard_client.brakeRelease()
 
 
     # rtde_control
-    def disconnect(self):
+    def logout(self):
         self.robot_control.disconnect()
 
     def reconnect(self):
@@ -37,14 +43,14 @@ class URRobot():
     def isConnected(self):
         self.robot_control.isConnected()
 
-    def moveJ(self, path, speed=1.0, acceleration=1.0, asynchronous=False):
-        self.robot_control.moveJ(path, speed, acceleration, asynchronous)
+    def joint_move(self, joint_pos, move_mode, is_block, speed):
+        self.robot_control.moveJ(joint_pos, speed)
 
     def moveJ_IK(self, pose, speed=1.05, acceleration=1.4, asynchronous=False):
         self.robot_control.moveJ_IK(pose, speed, acceleration, asynchronous)
     
-    def moveL(self, pose, speed=0.25, acceleration=1.2, asynchronous=False):
-        self.robot_control.moveL(pose, speed, acceleration, asynchronous)
+    def linear_move(self, tcp_pos, move_mode, is_block, speed):
+        self.robot_control.moveL(tcp_pos, speed)
 
     def moveL_FK(self, joint_positions, speed=0.25, acceleration=1.2, asynchronous=False):
         self.robot_control.moveL_FK(joint_positions, speed, acceleration, asynchronous)
@@ -84,7 +90,7 @@ class URRobot():
     def get_joint_control_outputs(self):
         return self.robot_receive.getJointControlOutput()
 
-    def get_actual_tcp_pose(self):
+    def get_tcp_position(self):
         return self.robot_receive.getActualTCPPose()
 
     def get_actual_tcp_speed(self):
@@ -102,7 +108,7 @@ class URRobot():
     def get_robot_mode(self):
         return self.robot_receive.getRobotMode()
 
-    def get_robot_status(self):
+    def get_robot_state(self):
         return self.robot_receive.getRobotStatus()
 
     def get_actual_digital_output_bits(self):

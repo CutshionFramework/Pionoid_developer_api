@@ -53,7 +53,7 @@ class URRobot():
         self.robot_control.movePath(path, asynchronous)
 
 
-    # robot_receive
+    # rtde_receive
     def get_timestamp(self):
         return self.robot_receive.getTimestamp()
 

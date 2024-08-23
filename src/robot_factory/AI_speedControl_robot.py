@@ -4,7 +4,7 @@ import os
 # Add the parent directory to the sys.path to ensure imports work correctly
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from robot.jaka_robot import JakaRobot
+from src.robot.custom_robots.jaka_robot import JakaRobot
 from integrations.AIvision_integration import AIVisionIntegration
 
 # Constants

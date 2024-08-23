@@ -1,25 +1,40 @@
 # src/robot/core_robot.py
-# example setup, future use of ABC classes for common interface & structure 
+from abc import ABC, abstractmethod
 
-class core_robot:
+class core_robot(ABC):
     def __init__(self):
         self.id = None
         self.type = None
+        self.speed = 1.0  # Default speed
 
-    def perform_task(self, task: str):
-        """
-        Perform a specific task. This method should be overridden in derived classes.
-        """
-        raise NotImplementedError("This method should be overridden by subclasses.")
+    @abstractmethod
+    def login(self):
+        pass
 
-    def get_oper_status(self) -> dict:
-        """
-        Get the current status of the robot. This method can be overridden if needed.
-        """
-        return {
-            "id": self.id,
-            "type": self.type,
-            "status": "Unknown"
-        }
-    
-    # Additional methods common to all robots can be added here
+    @abstractmethod
+    def logout(self):
+        pass
+
+    @abstractmethod
+    def power_on(self):
+        pass
+
+    @abstractmethod
+    def enable_robot(self):
+        pass
+
+    @abstractmethod
+    def joint_move(self, joint_pos, move_mode, is_block, speed):
+        pass
+
+    @abstractmethod
+    def linear_move(self, tcp_pos, move_mode, is_block, speed):
+        pass
+
+    @abstractmethod
+    def get_robot_state(self):
+        pass
+
+    @abstractmethod
+    def get_tcp_position(self):
+        pass

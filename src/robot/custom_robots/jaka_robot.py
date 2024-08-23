@@ -1,27 +1,32 @@
-# -*- coding: utf-8 -*-
 import sys
 import os
 import time
-import importlib.util
-from robot.core_robot import core_robot
+import logging
 
-# Construct the absolute path to the libs_64 directory
-libs_64_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'libs_64'))
+# Add the directory containing core_robot to the system path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from core_robot import core_robot
+
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+# Get the current directory of the script
+current_dir = os.path.dirname(os.path.abspath(__file__))
+libs_64_path = os.path.join(current_dir, '..', '..', '..', 'libs_64')
 sys.path.append(libs_64_path)
 
 # Import the jkrc.pyd library
-jkrc_path = os.path.join(libs_64_path, 'jkrc.pyd')
-spec = importlib.util.spec_from_file_location("jkrc", jkrc_path)
-jkrc = importlib.util.module_from_spec(spec)
-sys.modules["jkrc"] = jkrc
-spec.loader.exec_module(jkrc)
+try:
+    import jkrc
+except ImportError as e:
+    logging.error(f"Failed to import jkrc: {e}")
+    sys.exit(1)
 
 
 class JakaRobot(core_robot):
     def __init__(self, ip):
         super().__init__()  # Initialize the parent class
         self.robot = jkrc.RC(ip)
-        self.speed = 1.0  # Default speed
 
     def login(self):
         return self.robot.login()
@@ -49,10 +54,10 @@ class JakaRobot(core_robot):
     
     def get_robot_state(self):
         return self.robot.get_robot_state()
-      
+ 
     def get_tcp_position(self):
         return self.robot.get_tcp_position()
-    
+     
     def get_tool_data(self, tool_id):
         return self.robot.get_tool_data(tool_id)
     
@@ -76,7 +81,7 @@ class JakaRobot(core_robot):
     
     def linear_move(self, tcp_pos, move_mode, is_block, speed):
         return self.robot.linear_move(tcp_pos, move_mode, is_block, speed)
-
+    
     def control_speed(self, detected):
         if detected:
             self.speed = 0.1  

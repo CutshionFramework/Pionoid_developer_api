@@ -1,5 +1,6 @@
 import sys
 import os
+import time
 import rtde_control
 import rtde_receive
 import dashboard_client
@@ -110,12 +111,18 @@ class URRobot(core_robot):
 
     def get_robot_state(self):
         return self.robot_receive.getRobotStatus()
+    
+    def get_actual_digital_input_bits(self):
+        return self.robot_receive.getActualDigitalInputBits()
 
     def get_actual_digital_output_bits(self):
         return self.robot_receive.getActualDigitalOutputBits()
 
     def get_digital_out_state(self, output_id):
         return self.robot_receive.getDigitalOutState(output_id)
+    
+    def get_digital_in_state(self, input_id):
+        return self.robot_receive.getDigitalInState(input_id)
 
     def get_standard_analog_input_0(self):
         return self.robot_receive.getStandardAnalogInput0()
@@ -128,6 +135,9 @@ class URRobot(core_robot):
 
     def get_standard_analog_output_1(self):
         return self.robot_receive.getStandardAnalogOutput1()
+    
+    def get_tool_digital_output(self,output_id):
+        return self.robot_receive.getToolDigitalOut(output_id)
 
     def is_protective_stopped(self):
         return self.robot_receive.isProtectiveStopped()
@@ -138,31 +148,33 @@ class URRobot(core_robot):
     def get_payload(self):
         return self.robot_receive.getPayload()
     
+    def get_actual_tool_accelerometer(self):
+        return self.robot_receive.getActualToolAccelerometer()
 
     # rtde_io
     def set_standard_digital_out(self, output_id, signal_level):
-        return self.robot_control.setStandardDigitalOut(output_id, signal_level)
+        return self.robot_rtde_io.setStandardDigitalOut(output_id, signal_level)
 
     def set_configurable_digital_out(self, output_id, signal_level):
-        return self.robot_control.setConfigurableDigitalOut(output_id, signal_level)
+        return self.robot_rtde_io.setConfigurableDigitalOut(output_id, signal_level)
 
     def set_tool_digital_out(self, output_id, signal_level):
-        return self.robot_control.setToolDigitalOut(output_id, signal_level)
+        return self.robot_rtde_io.setToolDigitalOut(output_id, signal_level)
 
     def set_speed_slider(self, speed):
-        return self.robot_control.setSpeedSlider(speed)
+        return self.robot_rtde_io.setSpeedSlider(speed)
 
     def set_analog_output_voltage(self, output_id, voltage_ratio):
-        return self.robot_control.setAnalogOutputVoltage(output_id, voltage_ratio)
+        return self.robot_rtde_io.setAnalogOutputVoltage(output_id, voltage_ratio)
 
     def set_analog_output_current(self, output_id, current_ratio):
-        return self.robot_control.setAnalogOutputCurrent(output_id, current_ratio)
+        return self.robot_rtde_io.setAnalogOutputCurrent(output_id, current_ratio)
 
     def set_input_int_register(self, input_id, value):
-        return self.robot_control.setInputIntRegister(input_id, value)
+        return self.robot_rtde_io.setInputIntRegister(input_id, value)
 
     def set_input_double_register(self, input_id, value):
-        return self.robot_control.setInputDoubleRegister(input_id, value)
+        return self.robot_rtde_io.setInputDoubleRegister(input_id, value)
 
 
 # Example usage
@@ -170,20 +182,79 @@ if __name__ == "__main__":
     robot = URRobot("192.168.177.128")
 
     # connect dashboard (= jakaZu app)
-    robot.connect()
+    robot.login()
 
     # Move to a specific joint position
     joint_positions_1 = [0.0, -1.57, 0.0, -1.57, 0.0, 0.0]
     joint_positions_2 = [0.5, -1.0, 0.0, -1.0, 0.0, 0.0]
-    robot.moveJ(joint_positions_1)
-    robot.moveJ(joint_positions_2)
+    robot.joint_move(joint_positions_1)
+    robot.joint_move(joint_positions_2)
     
-    # Print the current robot state
+    # Print the current robot receive
+    
     print("Current timestamp:", robot.get_timestamp())
     print("Actual joint positions:", robot.get_actual_joint_positions())
-    print("Actual TCP pose:", robot.get_actual_tcp_pose())
+    print("Actual TCP pose:", robot.get_tcp_position())
     print("Robot mode:", robot.get_robot_mode())
-    print("Robot status:", robot.get_robot_status())
+    print("Robot status:", robot.get_robot_state())
+    print("Get standard analog output1",robot.get_standard_analog_output_1())
+    print("Get standard analog input1",robot.get_standard_analog_input_1())
+    print("Get actual tool accelerometer",robot.get_actual_tool_accelerometer())
+    print("Get payload",robot.get_payload())
+    
+    # Print the current robot io 
+    
+    print("Set standard DO",robot.set_standard_digital_out(2,False))
+    print("Set configuarable DO",robot.set_configurable_digital_out(2,True))
+    print("Set tool Do",robot.set_tool_digital_out(0,True)) 
+    
+    # Set delay to print reflected result 
+    time.sleep(0.1)
+    print("bit:",robot.get_actual_digital_output_bits(),flush=True)
+    
+    # Convert decimal result to binary and categorized each DO
+     
+    def decimal_to_binary_and_categorize(n):
+    
+        # Convert decimal to binary
+        binary = bin(n)[2:]  # Remove the '0b' prefix from the binary representation
+        
+        # Pad the binary number to ensure it has at least 18 bits
+        binary = binary.zfill(18)
 
+        # Reverse the binary string to access from the least significant bit
+        reversed_binary = binary[::-1]
+
+        # Categorize based on specified bit ranges
+        categories = {
+            "standard": reversed_binary[:8][::-1],       # 0-7 bits
+            "configurable": reversed_binary[8:16][::-1], # 8-15 bits
+            "tool": reversed_binary[16:18][::-1]         # 16-17 bits
+        }
+
+        # Initialize the enable DO dictionary to store bit positions with value '1'
+        enable_DO = {
+            "standard": [],
+            "configurable": [],
+            "tool": []
+        }
+        
+        # Populate the enable DO dictionary with bit positions that are '1'
+        for category, bits in categories.items():
+            for i, bit in enumerate(bits[::-1]):  # Iterate from the least significant bit
+                if bit == '1':
+                    enable_DO[category].append(i)
+
+        return categories, enable_DO
+    
+    decimal_output_bits = robot.get_actual_digital_output_bits()
+    result, enable_DO = decimal_to_binary_and_categorize(decimal_output_bits)
+
+    print("\n[Enabled DO]")
+    for category, bits in enable_DO.items():
+        print(f"{category}: {bits}")
+        
+        
+        
     # Powers off the robot arm.
     # robot.power_off()

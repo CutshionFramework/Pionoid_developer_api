@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from src.robot.custom_robots.jaka_robot import JakaRobot
+from robot.custom_robots.jaka_robot import JakaRobot
 from integrations.mongodb_storage import MongoDBStorage
 
 def handle_robot_commands(robot, command, storage):
@@ -46,7 +46,7 @@ def handle_robot_commands(robot, command, storage):
     print(f"Unrecognized command: {command}")
 
 if __name__ == "__main__":
-    robot = JakaRobot("192.168.0.109")
+    robot = JakaRobot("192.168.0.130")
     robot.login()
     
     storage = MongoDBStorage()  # Initialize MongoDB storage with default settings

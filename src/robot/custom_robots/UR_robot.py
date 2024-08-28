@@ -116,7 +116,19 @@ class URRobot(core_robot):
         return self.robot_receive.getActualDigitalInputBits()
 
     def get_actual_digital_output_bits(self):
-        return self.robot_receive.getActualDigitalOutputBits()
+        # Set delay to ensure the result is reflected
+        time.sleep(0.1)
+        decimal_output_bits = self.robot_receive.getActualDigitalOutputBits()
+        
+        # Process the bits
+        result, enable_DO = self.decimal_to_binary_and_categorize(decimal_output_bits)
+        
+        # Print the categorized bits
+        print("[Enabled DO]")
+        for category, bits in enable_DO.items():
+            print(f"{category}: {bits}")
+        
+        return decimal_output_bits
 
     def get_digital_out_state(self, output_id):
         return self.robot_receive.getDigitalOutState(output_id)
@@ -175,47 +187,12 @@ class URRobot(core_robot):
 
     def set_input_double_register(self, input_id, value):
         return self.robot_rtde_io.setInputDoubleRegister(input_id, value)
+    
+#-----------------------------------------Utilities---------------------------------------
 
 
-# Example usage
-if __name__ == "__main__":
-    robot = URRobot("192.168.177.128")
-
-    # connect dashboard (= jakaZu app)
-    robot.login()
-
-    # Move to a specific joint position
-    joint_positions_1 = [0.0, -1.57, 0.0, -1.57, 0.0, 0.0]
-    joint_positions_2 = [0.5, -1.0, 0.0, -1.0, 0.0, 0.0]
-    robot.joint_move(joint_positions_1)
-    robot.joint_move(joint_positions_2)
-    
-    # Print the current robot receive
-    
-    print("Current timestamp:", robot.get_timestamp())
-    print("Actual joint positions:", robot.get_actual_joint_positions())
-    print("Actual TCP pose:", robot.get_tcp_position())
-    print("Robot mode:", robot.get_robot_mode())
-    print("Robot status:", robot.get_robot_state())
-    print("Get standard analog output1",robot.get_standard_analog_output_1())
-    print("Get standard analog input1",robot.get_standard_analog_input_1())
-    print("Get actual tool accelerometer",robot.get_actual_tool_accelerometer())
-    print("Get payload",robot.get_payload())
-    
-    # Print the current robot io 
-    
-    print("Set standard DO",robot.set_standard_digital_out(2,False))
-    print("Set configuarable DO",robot.set_configurable_digital_out(2,True))
-    print("Set tool Do",robot.set_tool_digital_out(0,True)) 
-    
-    # Set delay to print reflected result 
-    time.sleep(0.1)
-    print("bit:",robot.get_actual_digital_output_bits(),flush=True)
-    
-    # Convert decimal result to binary and categorized each DO
-     
-    def decimal_to_binary_and_categorize(n):
-    
+    # Helper - Convert decimal result to binary and categorize each DO
+    def decimal_to_binary_and_categorize(self, n):
         # Convert decimal to binary
         binary = bin(n)[2:]  # Remove the '0b' prefix from the binary representation
         
@@ -246,15 +223,40 @@ if __name__ == "__main__":
                     enable_DO[category].append(i)
 
         return categories, enable_DO
-    
-    decimal_output_bits = robot.get_actual_digital_output_bits()
-    result, enable_DO = decimal_to_binary_and_categorize(decimal_output_bits)
+#-----------------------------------------main---------------------------------------
+# Example usage
+if __name__ == "__main__":
+    robot = URRobot("192.168.88.128")
 
-    print("\n[Enabled DO]")
-    for category, bits in enable_DO.items():
-        print(f"{category}: {bits}")
-        
-        
-        
+    # connect dashboard (= jakaZu app)
+    robot.login()
+
+    # Move to a specific joint position
+    joint_positions_1 = [0.0, -1.57, 0.0, -1.57, 0.0, 0.0]
+    joint_positions_2 = [0.5, -1.0, 0.0, -1.0, 0.0, 0.0]
+    robot.joint_move(joint_positions_1, 0, True, 1)
+    robot.joint_move(joint_positions_2, 0, True, 1)
+    
+    # Print the current robot receive
+    
+    print("Current timestamp:", robot.get_timestamp())
+    print("Actual joint positions:", robot.get_actual_joint_positions())
+    print("Actual TCP pose:", robot.get_tcp_position())
+    print("Robot mode:", robot.get_robot_mode())
+    print("Robot status:", robot.get_robot_state())
+    print("Get standard analog output1", robot.get_standard_analog_output_1())
+    print("Get standard analog input1", robot.get_standard_analog_input_1())
+    print("Get actual tool accelerometer", robot.get_actual_tool_accelerometer())
+    print("Get payload", robot.get_payload())
+    
+    # Print the current robot io 
+    
+    print("Set standard DO", robot.set_standard_digital_out(2, False))
+    print("Set configurable DO", robot.set_configurable_digital_out(2, False))
+    print("Set tool DO", robot.set_tool_digital_out(1, False)) 
+    print("bit:", robot.get_actual_digital_output_bits(), flush=True)
+    # Get and print the actual digital output bits and their categories
+    robot.get_actual_digital_output_bits()
+            
     # Powers off the robot arm.
     # robot.power_off()

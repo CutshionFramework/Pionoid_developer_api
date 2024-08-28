@@ -4,7 +4,7 @@ import os
 # Add the parent directory to the sys.path to ensure imports work correctly
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from src.robot.custom_robots.jaka_robot import JakaRobot
+from robot.custom_robots.jaka_robot import JakaRobot
 from integrations.AIvision_integration import AIVisionIntegration
 
 # Constants
@@ -46,7 +46,7 @@ def initialize_robot(ip_address):
 
 def main():
     try:
-        robot = initialize_robot(ip_address="192.168.0.124")
+        robot = initialize_robot(ip_address="192.168.0.130")
         ai_vision = AIVisionIntegration()
 
         # Run move_robot_to_positions after camera processing

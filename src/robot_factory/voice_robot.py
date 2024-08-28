@@ -3,7 +3,7 @@ import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from src.robot.custom_robots.jaka_robot import JakaRobot
+from robot.custom_robots.jaka_robot import JakaRobot
 from integrations.Openai_voice_control import VoiceControl
 
 def handle_robot_commands(robot, command):

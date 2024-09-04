@@ -52,6 +52,9 @@ class JakaRobot(core_robot):
     def get_payload(self):
         return self.robot.get_payload()
     
+    def get_robot_state(self):
+        return self.robot.get_robot_state()
+    
     def get_robot_status(self):
         return self.robot.get_robot_status()
  
@@ -92,7 +95,7 @@ class JakaRobot(core_robot):
                   
 # Example usage
 if __name__ == "__main__":
-    robot = JakaRobot("192.168.0.219")
+    robot = JakaRobot("192.168.0.116")
     
     # Login
     robot.login()
@@ -110,7 +113,7 @@ if __name__ == "__main__":
         print("Something happened, the error code is:", ret[0])
     
     # Get robot state
-    ret = robot.get_robot_status()
+    ret = robot.get_robot_state()
     if ret[0] == 0:
         print("The robot state is:", ret[1])
     else:

@@ -109,7 +109,7 @@ class URRobot(core_robot):
     def get_robot_mode(self):
         return self.robot_receive.getRobotMode()
 
-    def get_robot_status(self):
+    def get_robot_state(self):
         return self.robot_receive.getRobotStatus()
     
     def get_actual_digital_input_bits(self):

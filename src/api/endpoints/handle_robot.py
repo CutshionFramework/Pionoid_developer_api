@@ -1,10 +1,12 @@
+from flask import Flask, request, jsonify
+from flask_cors import CORS
 import sys
 import os
-from flask import Flask, request, jsonify
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 from robot.custom_robots.jaka_robot import JakaRobot
 
 app = Flask(__name__)
+CORS(app)  # Enable CORS for all routes
 
 def initialize_robot(robot):
     robot.login()
@@ -13,7 +15,6 @@ def initialize_robot(robot):
 
 def move_robot(robot, joint_positions):
     robot.joint_move(joint_pos=joint_positions, move_mode=0, is_block=True, speed=1.0)
-
 
 def print_robot_status(robot):
     state = robot.get_robot_state()
@@ -24,9 +25,9 @@ def print_robot_status(robot):
 @app.route('/api/handle-robot', methods=['POST'])
 def handle_robot():
     try:
-        robot = JakaRobot("192.168.0.131")
+        robot = JakaRobot("192.168.0.111")
         initialize_robot(robot)
-        move_robot(robot, [1, 0, 0, 0, 0, 0])
+        move_robot(robot, [0, 1, 0, 0, 0, 0])
         print_robot_status(robot)
         robot.logout()
         return jsonify({'message': 'Robot operation successful'}), 200

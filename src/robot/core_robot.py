@@ -38,3 +38,12 @@ class core_robot(ABC):
     @abstractmethod
     def get_tcp_position(self):
         pass
+
+    @abstractmethod
+    def get_active_digital_output(self):
+        pass
+
+    @abstractmethod
+    def set_digital_output(self, io_type, index, value):
+        pass
+    

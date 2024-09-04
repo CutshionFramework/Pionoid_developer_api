@@ -116,19 +116,7 @@ class URRobot(core_robot):
         return self.robot_receive.getActualDigitalInputBits()
 
     def get_actual_digital_output_bits(self):
-        # Set delay to ensure the result is reflected
-        time.sleep(0.1)
-        decimal_output_bits = self.robot_receive.getActualDigitalOutputBits()
-        
-        # Process the bits
-        result, enable_DO = self.decimal_to_binary_and_categorize(decimal_output_bits)
-        
-        # Print the categorized bits
-        print("[Enabled DO]")
-        for category, bits in enable_DO.items():
-            print(f"{category}: {bits}")
-        
-        return decimal_output_bits
+        return self.robot_receive.getActualDigitalOutputBits()
 
     def get_digital_out_state(self, output_id):
         return self.robot_receive.getDigitalOutState(output_id)
@@ -188,8 +176,31 @@ class URRobot(core_robot):
     def set_input_double_register(self, input_id, value):
         return self.robot_rtde_io.setInputDoubleRegister(input_id, value)
     
-#-----------------------------------------Utilities---------------------------------------
+    def get_active_digital_output(self):
+        # Set delay to ensure the result is reflected
+        time.sleep(0.1)
+        decimal_output_bits = self.robot_receive.getActualDigitalOutputBits()
+        
+        # Process the bits
+        result, enable_DO = self.decimal_to_binary_and_categorize(decimal_output_bits)
+        
+        # Print the categorized bits
+        print("[Enabled DO]")
+        for category, bits in enable_DO.items():
+            print(f"{category}: {bits}")
+        
+        return decimal_output_bits
 
+    def set_digital_output(self, io_type, index, value):
+        if io_type == 0:
+            return self.set_standard_digital_out(index, value)
+        elif io_type == 1:
+            return self.set_tool_digital_out(index, value)
+        elif io_type == 2:
+            return self.set_configurable_digital_out(index, value)
+        else:
+            raise ValueError("Invalid io_type")
+        
 
     # Helper - Convert decimal result to binary and categorize each DO
     def decimal_to_binary_and_categorize(self, n):
@@ -204,16 +215,16 @@ class URRobot(core_robot):
 
         # Categorize based on specified bit ranges
         categories = {
-            "standard": reversed_binary[:8][::-1],       # 0-7 bits
-            "configurable": reversed_binary[8:16][::-1], # 8-15 bits
-            "tool": reversed_binary[16:18][::-1]         # 16-17 bits
+            "CABINET-STANDARD": reversed_binary[:8][::-1],       # 0-7 bits standard
+            "EXTEND-CONFIG": reversed_binary[8:16][::-1], # 8-15 bits configurable
+            "TOOL": reversed_binary[16:18][::-1]         # 16-17 bits tool
         }
 
         # Initialize the enable DO dictionary to store bit positions with value '1'
         enable_DO = {
-            "standard": [],
-            "configurable": [],
-            "tool": []
+            "CABINET-STANDARD": [],
+            "EXTEND-CONFIG": [],
+            "TOOL": []
         }
         
         # Populate the enable DO dictionary with bit positions that are '1'
@@ -223,7 +234,7 @@ class URRobot(core_robot):
                     enable_DO[category].append(i)
 
         return categories, enable_DO
-#-----------------------------------------main---------------------------------------
+
 # Example usage
 if __name__ == "__main__":
     robot = URRobot("192.168.88.128")
@@ -254,9 +265,9 @@ if __name__ == "__main__":
     print("Set standard DO", robot.set_standard_digital_out(2, False))
     print("Set configurable DO", robot.set_configurable_digital_out(2, False))
     print("Set tool DO", robot.set_tool_digital_out(1, False)) 
-    print("bit:", robot.get_actual_digital_output_bits(), flush=True)
-    # Get and print the actual digital output bits and their categories
-    robot.get_actual_digital_output_bits()
+    robot.set_digital_output(1, 0, 0)
+    print("bit:", robot.get_active_digital_output(), flush=True)
+
             
     # Powers off the robot arm.
     # robot.power_off()

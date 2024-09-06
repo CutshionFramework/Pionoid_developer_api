@@ -2,10 +2,14 @@
 from abc import ABC, abstractmethod
 
 class core_robot(ABC):
-    def __init__(self):
-        self.id = None
-        self.type = None
+    def __init__(self):  
+        self.ip = None
         self.speed = 1.0  # Default speed
+    
+    def set_ip(self, ip):
+        """Set the IP address of the robot."""
+        self.ip = ip
+        # Default implementation that can be used by subclasses
 
     @abstractmethod
     def login(self):
@@ -20,7 +24,15 @@ class core_robot(ABC):
         pass
 
     @abstractmethod
+    def power_off(self):
+        pass
+
+    @abstractmethod
     def enable_robot(self):
+        pass
+
+    @abstractmethod
+    def disable_robot(self):
         pass
 
     @abstractmethod

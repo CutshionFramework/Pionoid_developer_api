@@ -25,14 +25,24 @@ class URRobot(core_robot):
         return self.robot_dashboard_client.isConnected()
 
     def power_on(self):
+        if not self.is_connected():
+            raise RuntimeError("Dashboard client is not connected")
         self.robot_dashboard_client.powerOn()
 
     def power_off(self):
+        if not self.is_connected():
+            raise RuntimeError("Dashboard client is not connected")
         self.robot_dashboard_client.powerOff()
     
     def enable_robot(self):
+        if not self.is_connected():
+            raise RuntimeError("Dashboard client is not connected")
         self.robot_dashboard_client.brakeRelease()
 
+    def disable_robot(self):
+        if not self.is_connected():
+            raise RuntimeError("Dashboard client is not connected")
+        self.robot_dashboard_client.brakeEngage()
 
     # rtde_control
     def logout(self):
@@ -239,8 +249,10 @@ class URRobot(core_robot):
 if __name__ == "__main__":
     robot = URRobot("192.168.88.128")
 
-    # connect dashboard (= jakaZu app)
+    # connect dashboard 
     robot.login()
+    robot.power_on()
+    robot.enable_robot()
 
     # Move to a specific joint position
     joint_positions_1 = [0.0, -1.57, 0.0, -1.57, 0.0, 0.0]
@@ -267,7 +279,7 @@ if __name__ == "__main__":
     print("Set tool DO", robot.set_tool_digital_out(1, False)) 
     robot.set_digital_output(1, 0, 0)
     print("bit:", robot.get_active_digital_output(), flush=True)
-
+    robot.enable_robot()
             
     # Powers off the robot arm.
     # robot.power_off()

@@ -36,9 +36,15 @@ class JakaRobot(core_robot):
     
     def power_on(self):
         return self.robot.power_on()
-    
+
+    def power_off(self):
+        return self.robot.power_off()
+        
     def enable_robot(self):
         return self.robot.enable_robot()
+    
+    def disable_robot(self):
+        return self.robot.disable_robot()
     
     def joint_move(self, joint_pos, move_mode, is_block, speed):
         return self.robot.joint_move(joint_pos=joint_pos, move_mode=move_mode, is_block=is_block, speed=speed)
@@ -98,7 +104,7 @@ class JakaRobot(core_robot):
         }
 
         for io_type in range(3):  #  io_type values are 0, 1, and 2
-            for index in range(18):  # Assuming a maximum of 18 bits
+            for index in range(18):  # Assuming a maximum of 18
                 ret = self.get_digital_output(io_type, index)
                 if ret[0] == 0 and ret[1] == 1:  # Check if the output is on
                     if io_type == 0:
@@ -117,7 +123,7 @@ class JakaRobot(core_robot):
                   
 # Example usage
 if __name__ == "__main__":
-    robot = JakaRobot("192.168.0.111")
+    robot = JakaRobot("192.168.0.129")
     
     # Login
     robot.login()
@@ -204,13 +210,13 @@ if __name__ == "__main__":
     time.sleep(2)
     
     # Linear move
-    tcp_pos = [0, 0, -30, 0, 0, 0]
+    tcp_pos = [0, 0, 0, 0, 0, 0]
     ret = robot.linear_move(tcp_pos, move_mode=1, is_block=True, speed=10)
     print(ret[0])
-    time.sleep(3)
+    time.sleep(1)
     
-    # Motion abort
-    robot.motion_abort()
+    robot.disable_robot()
+    robot.power_off()
     
     # Logout
     robot.logout()

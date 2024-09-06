@@ -27,7 +27,7 @@ def handle_robot():
     try:
         robot = JakaRobot("192.168.0.111")
         initialize_robot(robot)
-        move_robot(robot, [0, 1, 0, 0, 0, 0])
+        move_robot(robot, [1, 0, 0, 0, 0, 0])
         print_robot_status(robot)
         robot.logout()
         return jsonify({'message': 'Robot operation successful'}), 200

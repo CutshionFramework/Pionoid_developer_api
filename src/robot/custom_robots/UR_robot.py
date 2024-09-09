@@ -124,7 +124,7 @@ class URRobot(core_robot):
     
     def get_all_IO(self):
         all_IO = {
-            "STANDARD": {
+            "CABINET": {
                 "dout": [],
                 "din": [], 
                 "aout": [],
@@ -135,7 +135,8 @@ class URRobot(core_robot):
                 "tio_din": [],
                 "tio_ain": []
             },
-            "CONFIGURABLE": {
+            "EXTEND": {
+                "extio": [], 
                 "out": [],
                 "in": [], 
             }
@@ -150,19 +151,19 @@ class URRobot(core_robot):
         _, din_categories = self.decimal_to_binary_and_categorize(din)
 
         # Save the categorized digital outputs
-        all_IO["STANDARD"]["dout"] = dout_categories["CABINET-STANDARD"]
-        all_IO["CONFIGURABLE"]["dout"] = dout_categories["EXTEND-CONFIG"]
+        all_IO["CABINET"]["dout"] = dout_categories["CABINET-STANDARD"]
+        all_IO["EXTEND"]["dout"] = dout_categories["EXTEND-CONFIG"]
         all_IO["TOOL"]["tio_dout"] = dout_categories["TOOL"]
 
         # Save the categorized digital inputs
-        all_IO["STANDARD"]["din"] = din_categories["CABINET-STANDARD"]
-        all_IO["CONFIGURABLE"]["din"] = din_categories["EXTEND-CONFIG"]
+        all_IO["CABINET"]["din"] = din_categories["CABINET-STANDARD"]
+        all_IO["EXTEND"]["din"] = din_categories["EXTEND-CONFIG"]
         all_IO["TOOL"]["tio_din"] = din_categories["TOOL"]
 
         # Save the analog outputs and inputs directly (assuming they are float values)
-        all_IO["STANDARD"]["aout"] = [self.robot_receive.getStandardAnalogOutput0(), 
+        all_IO["CABINET"]["aout"] = [self.robot_receive.getStandardAnalogOutput0(), 
                                     self.robot_receive.getStandardAnalogOutput1()]
-        all_IO["STANDARD"]["ain"] = [self.robot_receive.getStandardAnalogInput0(), 
+        all_IO["CABINET"]["ain"] = [self.robot_receive.getStandardAnalogInput0(), 
                                     self.robot_receive.getStandardAnalogInput1()]
 
         return all_IO

@@ -138,7 +138,9 @@ class JakaRobot(core_robot):
                 "tio_ain": []    # tool analog input
             },
             "EXTEND": {
-                "extio": []  # external extension IO
+                "extio": [],  # external extension IO
+                "out": [],
+                "in": [], 
             }
         }
 

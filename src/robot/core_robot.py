@@ -58,4 +58,8 @@ class core_robot(ABC):
     @abstractmethod
     def set_digital_output(self, io_type, index, value):
         pass
+
+    @abstractmethod
+    def get_all_IO(self):
+        pass
     

@@ -60,6 +60,9 @@ class JakaRobot(core_robot):
     
     def get_robot_state(self):
         return self.robot.get_robot_state()
+    
+    def get_robot_status(self):
+        return self.robot.get_robot_status()
  
     def get_tcp_position(self):
         return self.robot.get_tcp_position()
@@ -120,6 +123,38 @@ class JakaRobot(core_robot):
             print(f"{category}: {bits}")
 
         return all_outputs
+    
+    def get_all_IO(self):
+        all_IO = {
+            "CABINET": {
+                "dout": [],  # cabinet digital output
+                "din": [],   # cabinet digital input
+                "aout": [],  # cabinet analog output
+                "ain": []    # cabinet analog input
+            },
+            "TOOL": {
+                "tio_dout": [],  # tool digital output
+                "tio_din": [],   # tool digital input
+                "tio_ain": []    # tool analog input
+            },
+            "EXTEND": {
+                "extio": []  # external extension IO
+            }
+        }
+
+        ret = self.get_robot_status()
+        
+        all_IO["CABINET"]["dout"].append(ret[1][10])
+        all_IO["CABINET"]["din"].append(ret[1][11])
+        all_IO["CABINET"]["aout"].append(ret[1][12])
+        all_IO["CABINET"]["ain"].append(ret[1][13])
+        all_IO["TOOL"]["tio_dout"].append(ret[1][14])
+        all_IO["TOOL"]["tio_din"].append(ret[1][15])
+        all_IO["TOOL"]["tio_ain"].append(ret[1][16])
+        all_IO["EXTEND"]["extio"].append(ret[1][17])
+        
+        return all_IO
+
                   
 # Example usage
 if __name__ == "__main__":
@@ -146,6 +181,24 @@ if __name__ == "__main__":
         print("The robot state is:", ret[1])
     else:
         print("Something happened, the error code is:", ret[0])
+
+    # Get robot state
+    ret = robot.get_robot_status()
+    if ret[0] == 0:
+        # print("The robot state is:", ret[1])
+        print("dout : ", ret[1][10])
+        print("din : ", ret[1][11])
+        print("aout : ", ret[1][12])
+        print("ain : ", ret[1][13])
+        print("tio_dout : ", ret[1][14])
+        print("tio_din : ", ret[1][15])
+        print("tio_ain : ", ret[1][16])
+        print("extio : ", ret[1][17])
+    else:
+        print("Something happened, the error code is:", ret[0])
+    
+    result = robot.get_all_IO()
+    print("get_all_IO : ", result)
     
     # Get TCP position
     ret = robot.get_tcp_position()

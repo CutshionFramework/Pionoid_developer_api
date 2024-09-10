@@ -121,6 +121,9 @@ class URRobot(core_robot):
 
     def get_robot_state(self):
         return self.robot_receive.getRobotStatus()
+
+    def get_robot_status(self):
+        return self.robot_receive.getRobotStatus()
     
     def get_all_IO(self):
         all_IO = {

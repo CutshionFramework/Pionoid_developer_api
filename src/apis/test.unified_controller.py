@@ -45,7 +45,7 @@ log_response(response)
 # 6. Power Off the Robot
 #response = requests.post(f'{BASE_URL}/power_off', headers=headers)
 #log_response(response)  
-
+'''
 # 7. Save a Position
 joint_positions = [1, 0, 0, 0, 0, 0]
 response = requests.post(f'{BASE_URL}/save_pos', headers=headers, json={'joint_positions': joint_positions})
@@ -69,5 +69,10 @@ response = requests.post(f'{BASE_URL}/run_all_positions', headers=headers)
 log_response(response)  
 
 # 10. Delete the Move
-response = requests.post(f'{BASE_URL}/delete_move', headers=headers, json={'move_name': move_name})
-log_response(response)  
+#response = requests.post(f'{BASE_URL}/delete_move', headers=headers, json={'move_name': move_name})
+#log_response(response)
+'''
+# 11. Voice Command
+
+response = requests.post(f'{BASE_URL}/voice_command', headers=headers)
+log_response(response)

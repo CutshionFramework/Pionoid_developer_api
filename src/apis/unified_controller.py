@@ -14,6 +14,8 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from robot.core_robot import core_robot
 from robot.custom_robots.UR_robot import URRobot
 from robot.custom_robots.jaka_robot import JakaRobot
+from integrations.Openai_voice_control import VoiceControl
+from robot_factory import voice_robot
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS
@@ -344,6 +346,20 @@ def delete_move():
         return jsonify({'message': 'Error during deleting move'}), 500
 
     return jsonify({'message': f'Move {move_name} deleted successfully'})
+
+@app.route('/voice_command', methods=['POST'])
+def voice_command():
+    robot, error_response, status_code = get_robot_from_request()
+    if error_response:
+        return error_response, status_code
+
+    voice_control = VoiceControl()
+    command = voice_control.recognize_speech()  # Recognize speech and get the command as text
+    if command:
+        voice_robot.handle_robot_commands(robot, command)  # Handle the robot's response to the command
+        return jsonify({'message': f'Processed command: {command}'})
+    else:
+        return jsonify({'message': 'No command recognized'}), 400
 
 if __name__ == '__main__':
     app.run(debug=True)

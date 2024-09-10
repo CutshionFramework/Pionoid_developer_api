@@ -16,7 +16,9 @@ from robot.custom_robots.UR_robot import URRobot
 from robot.custom_robots.jaka_robot import JakaRobot
 
 app = Flask(__name__)
-CORS(app)  # Enable CORS
+# CORS(app)  # Enable CORS
+CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True, allow_headers=["Content-Type", "Authorization"], methods=["GET", "POST", "OPTIONS", "PUT", "DELETE"])
+
 
 # Get the secret key from environment variables
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
@@ -99,52 +101,91 @@ def get_robot_from_request():
 ### Endpoints
 
 # Route to select robot type and generate token
-@app.route('/select_robot_type', methods=['POST'])
-def select_robot_type():
+@app.route('/set_ip', methods=['POST'])
+def set_ip():
+    # 새로운 IP와 로봇 타입을 요청에서 받아옴
     data = request.json
-    ip = data.get('ip')  # Get IP from the request payload
+    new_ip = data.get('ip')
     robot_type = data.get('robot_type')
 
-    if not ip:
+    if not new_ip:
         return jsonify({'message': 'IP address is required'}), 400
+
+    if not robot_type:
+        return jsonify({'message': 'Robot type is required'}), 400
 
     if robot_type not in ROBOT_SUBCLASSES:
         return jsonify({'message': 'Invalid robot type'}), 400
 
-    token = generate_token(ip, robot_type)
-    store_robot_info(token, ip, robot_type)
-    return jsonify({'token': token})
+    # 새로운 로봇 타입과 IP로 토큰 생성 및 저장
+    new_token = generate_token(new_ip, robot_type)
+    store_robot_info(new_token, new_ip, robot_type)
 
-# Route to set IP and initialize robot based on token
-@app.route('/set_ip', methods=['POST'])
-def set_ip():
-    robot, error_response, status_code = get_robot_from_request()
-    if error_response:
-        return error_response, status_code
+    # 로봇 클래스 가져오기
+    RobotClass = ROBOT_SUBCLASSES.get(robot_type)
+    if not RobotClass:
+        return jsonify({'message': 'Unknown robot type'}), 400
 
-    # Invalidate the old token by deleting the robot data from Redis
-    auth_header = request.headers.get('Authorization')
-    token = auth_header.split()[1]
-    redis_client.delete(token)
-
-    # Generate a new token with the new IP
-    data = request.json
-    new_ip = data.get('ip')
-    if not new_ip:
-        return jsonify({'message': 'New IP address is required'}), 400
-
-    new_token = generate_token(new_ip, robot.__class__.__name__)
+    # 로봇 인스턴스 생성 및 IP 설정
+    robot = RobotClass(new_ip)
     robot.set_ip(new_ip)
-    store_robot_info(new_token, new_ip, robot.__class__.__name__)
 
-    # Ensure the robot is logged in with the new IP
+    # 로봇 로그인 시도
     try:
         robot.login()
     except Exception as e:
         print(f'Error during robot login: {e}')
         return jsonify({'message': 'Error during robot login'}), 500
 
-    return jsonify({'message': f'{robot.__class__.__name__} initialized and logged in successfully with new IP {robot.ip}', 'token': new_token})
+    # 새로운 토큰과 성공 메시지 반환
+    return jsonify({'message': f'{robot.__class__.__name__} initialized and logged in successfully with IP {robot.ip}', 'token': new_token})
+
+# @app.route('/select_robot_type', methods=['POST'])
+# def select_robot_type():
+#     data = request.json
+#     ip = data.get('ip')  # Get IP from the request payload
+#     robot_type = data.get('robot_type')
+
+#     if not ip:
+#         return jsonify({'message': 'IP address is required'}), 400
+
+#     if robot_type not in ROBOT_SUBCLASSES:
+#         return jsonify({'message': 'Invalid robot type'}), 400
+
+#     token = generate_token(ip, robot_type)
+#     store_robot_info(token, ip, robot_type)
+#     return jsonify({'token': token})
+
+# # Route to set IP and initialize robot based on token
+# @app.route('/set_ip', methods=['POST'])
+# def set_ip():
+#     robot, error_response, status_code = get_robot_from_request()
+#     if error_response:
+#         return error_response, status_code
+
+#     # Invalidate the old token by deleting the robot data from Redis
+#     auth_header = request.headers.get('Authorization')
+#     token = auth_header.split()[1]
+#     redis_client.delete(token)
+
+#     # Generate a new token with the new IP
+#     data = request.json
+#     new_ip = data.get('ip')
+#     if not new_ip:
+#         return jsonify({'message': 'New IP address is required'}), 400
+
+#     new_token = generate_token(new_ip, robot.__class__.__name__)
+#     robot.set_ip(new_ip)
+#     store_robot_info(new_token, new_ip, robot.__class__.__name__)
+
+#     # Ensure the robot is logged in with the new IP
+#     try:
+#         robot.login()
+#     except Exception as e:
+#         print(f'Error during robot login: {e}')
+#         return jsonify({'message': 'Error during robot login'}), 500
+
+#     return jsonify({'message': f'{robot.__class__.__name__} initialized and logged in successfully with new IP {robot.ip}', 'token': new_token})
 
 # Route to power on the robot based on token
 @app.route('/power_on', methods=['POST'])

@@ -121,6 +121,55 @@ class URRobot(core_robot):
 
     def get_robot_state(self):
         return self.robot_receive.getRobotStatus()
+
+    def get_robot_status(self):
+        return self.robot_receive.getRobotStatus()
+    
+    def get_all_IO(self):
+        all_IO = {
+            "CABINET": {
+                "dout": [],
+                "din": [], 
+                "aout": [],
+                "ain": []
+            },
+            "TOOL": {
+                "tio_dout": [],
+                "tio_din": [],
+                "tio_ain": []
+            },
+            "EXTEND": {
+                "extio": [], 
+                "out": [],
+                "in": [], 
+            }
+        }
+
+        # Current state of the digital outputs and inputs
+        dout = self.robot_receive.getActualDigitalOutputBits()
+        din = self.robot_receive.getActualDigitalInputBits()
+
+        # Categorize and extract the bits for the digital outputs and inputs
+        _, dout_categories = self.decimal_to_binary_and_categorize(dout)
+        _, din_categories = self.decimal_to_binary_and_categorize(din)
+
+        # Save the categorized digital outputs
+        all_IO["CABINET"]["dout"] = dout_categories["CABINET-STANDARD"]
+        all_IO["EXTEND"]["dout"] = dout_categories["EXTEND-CONFIG"]
+        all_IO["TOOL"]["tio_dout"] = dout_categories["TOOL"]
+
+        # Save the categorized digital inputs
+        all_IO["CABINET"]["din"] = din_categories["CABINET-STANDARD"]
+        all_IO["EXTEND"]["din"] = din_categories["EXTEND-CONFIG"]
+        all_IO["TOOL"]["tio_din"] = din_categories["TOOL"]
+
+        # Save the analog outputs and inputs directly (assuming they are float values)
+        all_IO["CABINET"]["aout"] = [self.robot_receive.getStandardAnalogOutput0(), 
+                                    self.robot_receive.getStandardAnalogOutput1()]
+        all_IO["CABINET"]["ain"] = [self.robot_receive.getStandardAnalogInput0(), 
+                                    self.robot_receive.getStandardAnalogInput1()]
+
+        return all_IO
     
     def get_actual_digital_input_bits(self):
         return self.robot_receive.getActualDigitalInputBits()
@@ -247,7 +296,7 @@ class URRobot(core_robot):
 
 # Example usage
 if __name__ == "__main__":
-    robot = URRobot("192.168.88.128")
+    robot = URRobot("192.168.177.128")
 
     # connect dashboard 
     robot.login()
@@ -277,9 +326,12 @@ if __name__ == "__main__":
     print("Set standard DO", robot.set_standard_digital_out(2, False))
     print("Set configurable DO", robot.set_configurable_digital_out(2, False))
     print("Set tool DO", robot.set_tool_digital_out(1, False)) 
-    robot.set_digital_output(1, 0, 0)
+    # robot.set_digital_output(1, 0, 0)
     print("bit:", robot.get_active_digital_output(), flush=True)
     robot.enable_robot()
+
+    result = robot.get_all_IO()
+    print(result)
             
     # Powers off the robot arm.
     # robot.power_off()

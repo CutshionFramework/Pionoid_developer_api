@@ -52,10 +52,6 @@ class core_robot(ABC):
         pass
 
     @abstractmethod
-    def get_active_digital_output(self):
-        pass
-
-    @abstractmethod
     def set_digital_output(self, io_type, index, value):
         pass
 
@@ -63,6 +59,10 @@ class core_robot(ABC):
     def get_all_IO(self):
         pass
 
+    @abstractmethod
+    def get_joint_position(self):
+        pass
+    
     @abstractmethod
     def get_robot_status(self):
         pass

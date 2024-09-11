@@ -73,6 +73,5 @@ log_response(response)
 #log_response(response)
 '''
 # 11. Voice Command
-
 response = requests.post(f'{BASE_URL}/voice_command', headers=headers)
 log_response(response)

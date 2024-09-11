@@ -1,12 +1,10 @@
 import os
 import pyaudio
-import whisper 
-import spacy
+import whisper
 import wave
 
 class VoiceControl:
     def __init__(self):
-        self.nlp = spacy.load("en_core_web_sm")
         self.model = whisper.load_model("base")
 
     def recognize_speech(self, duration=4):
@@ -41,14 +39,10 @@ class VoiceControl:
             if os.path.exists(wav_path):
                 os.remove(wav_path)
 
-    def process_command(self, command):
-        return self.nlp(command)
-
 # Example usage
 if __name__ == "__main__":
     voice_control = VoiceControl()
     while True:
         command = voice_control.recognize_speech()
         if command:
-            doc = voice_control.process_command(command)
-            print(f"Processed command: {doc}")
+            print(f"Processed command: {command}")

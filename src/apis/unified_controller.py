@@ -314,7 +314,7 @@ def run_all_positions():
                 float(position_hash[b'RY']),
                 float(position_hash[b'RZ'])
             ]
-            robot.joint_move(joint_positions, 0, True, 1)
+            robot.joint_move(joint_positions, 0, True, 1)#implement safezone later - optional
         
     except Exception as e:
         print(f'Error during running positions: {e}')

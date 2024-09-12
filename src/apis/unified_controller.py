@@ -383,13 +383,10 @@ def delete_move():
 @app.route('/get_moves', methods=['GET'])
 def get_moves():
     try:
-        # Redis에 저장된 모든 move_name을 가져옴
         move_names = redis_client.zrange('move_names', 0, -1)
         
-        # 모든 포지션 데이터를 담을 리스트
         movements = []
         
-        # 각 move_name에 대해 해당 포지션 데이터를 가져옴
         for move_name in move_names:
             position_hash = redis_client.hgetall(move_name)
             joint_positions = {
@@ -410,74 +407,59 @@ def get_moves():
         print(f'Error during fetching movements: {e}')
         return jsonify({'message': 'Error fetching movements'}), 500
 
-@app.route('/run_all_positions', methods=['POST'])
-def run_all_positions():
+@app.route('/run_all_moves', methods=['POST'])
+def run_all_moves():
     robot, error_response, status_code = get_robot_from_request()
     if error_response:
         return error_response, status_code
     
+    # Get the 'times' parameter from the request body
+    data = request.get_json()
+    times = int(data.get('times', 1))  # Default to 1 if 'times' is not provided
+
     try:
         # Retrieve all move_name keys from the sorted set
         move_names = redis_client.zrange('move_names', 0, -1)
         
-        # Retrieve and execute each position
-        for move_name in move_names:
-            position_hash = redis_client.hgetall(move_name)
-            joint_positions = [
-                float(position_hash[b'x']),
-                float(position_hash[b'y']),
-                float(position_hash[b'z']),
-                float(position_hash[b'RX']),
-                float(position_hash[b'RY']),
-                float(position_hash[b'RZ'])
-            ]
-            IO = position_hash.get(b'IO', b'').decode('utf-8')  # Ensure IO data is in string format
+        for _ in range(times):
+            # Retrieve and execute each position
+            for move_name in move_names:
+                move_name = move_name.decode('utf-8')
+                
+                position_hash = redis_client.hgetall(move_name)
+                
+                # Log the position hash to debug the issue
+                print(f'Position Hash: {position_hash}')
+                
+                # Ensure all position values exist and are valid floats
+                try:
+                    joint_positions = [
+                        float(position_hash.get(b'x', 0)),  # Default to 0 if key is missing
+                        float(position_hash.get(b'y', 0)),
+                        float(position_hash.get(b'z', 0)),
+                        float(position_hash.get(b'RX', 0)),
+                        float(position_hash.get(b'RY', 0)),
+                        float(position_hash.get(b'RZ', 0))
+                    ]
+                except ValueError as ve:
+                    print(f'Error converting joint positions to float: {ve}')
+                    return jsonify({'message': 'Invalid joint position values in Redis'}), 500
 
-            robot.joint_move(joint_positions, 0, True, 1) # Optional safezone
+                # Ensure IO data is decoded and valid
+                IO = position_hash.get(b'IO', b'').decode('utf-8')  # Ensure IO data is in string format
 
-            # Apply IO settings if IO data is present
-            if IO:
-                robot.apply_io_settings(eval(IO))
+                # Execute the robot movement
+                robot.joint_move(joint_positions, 0, True, 1)  # Optional safezone
+
+                # # Apply IO settings if IO data is present
+                # if IO:
+                #     robot.apply_io_settings(eval(IO))
         
     except Exception as e:
         print(f'Error during running positions: {e}')
         return jsonify({'message': 'Error during running positions'}), 500
 
     return jsonify({'message': 'All positions executed successfully'})
-# # Route to run all positions based on move_name
-# @app.route('/run_all_positions', methods=['POST'])
-# def run_all_positions():
-#     robot, error_response, status_code = get_robot_from_request()
-#     if error_response:
-#         return error_response, status_code
-    
-#     try:
-#         # Retrieve all move_name keys from the sorted set
-#         move_names = redis_client.zrange('move_names', 0, -1)
-        
-#         # Retrieve and execute each position
-#         for move_name in move_names:
-#             position_hash = redis_client.hgetall(move_name)
-#             joint_positions = [
-#                 float(position_hash[b'x']),
-#                 float(position_hash[b'y']),
-#                 float(position_hash[b'z']),
-#                 float(position_hash[b'RX']),
-#                 float(position_hash[b'RY']),
-#                 float(position_hash[b'RZ'])
-#             ]
-#             IO = position_hash.get(b'IO')
-
-#             robot.joint_move(joint_positions, 0, True, 1)#implement safezone later - optional
-
-#             robot.apply_io_settings(IO)
-        
-#     except Exception as e:
-#         print(f'Error during running positions: {e}')
-#         return jsonify({'message': 'Error during running positions'}), 500
-
-#     return jsonify({'message': 'All positions executed successfully'})
-
 
 
 @app.route('/voice_command', methods=['POST'])

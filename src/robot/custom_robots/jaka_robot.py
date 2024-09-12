@@ -98,32 +98,7 @@ class JakaRobot(core_robot):
             if self.speed < 1:
                 self.speed += 0.5  
         print(f"Speed adjusted to: {self.speed}")  
-    
-    def get_active_digital_output(self):
-        all_outputs = {
-            "CABINET": [],
-            "TOOL": [],
-            "EXTEND": []
-        }
-
-        for io_type in range(3):  #  io_type values are 0, 1, and 2
-            for index in range(18):  # Assuming a maximum of 18
-                ret = self.get_digital_output(io_type, index)
-                if ret[0] == 0 and ret[1] == 1:  # Check if the output is on
-                    if io_type == 0:
-                        all_outputs["CABINET"].append(index)
-                    elif io_type == 1:
-                        all_outputs["TOOL"].append(index)
-                    elif io_type == 2:
-                        all_outputs["EXTEND"].append(index)
-
-        # Print the categorized bits
-        print("[Enabled DO]")
-        for category, bits in all_outputs.items():
-            print(f"{category}: {bits}")
-
-        return all_outputs
-    
+      
     def get_all_IO(self):
         all_IO = {
             "CABINET": {
@@ -160,8 +135,8 @@ class JakaRobot(core_robot):
                   
 # Example usage
 if __name__ == "__main__":
-    # robot = JakaRobot("192.168.0.120")
-    robot = JakaRobot("10.5.5.100")
+    robot = JakaRobot("192.168.74.4")
+    
     # Login
     robot.login()
     
@@ -183,8 +158,35 @@ if __name__ == "__main__":
         print("The robot state is:", ret[1])
     else:
         print("Something happened, the error code is:", ret[0])
+    
 
-    # Get robot state
+    # Get robot status for all IO(filtered)
+    ret = robot.get_robot_status()
+    if ret[0] != 0:
+        print("Something happened, the error code is:", ret[0])
+    result = robot.get_all_IO()
+
+    # filter out empty or zero values
+    def filter_non_empty(io_dict):
+        filtered_dict = {}
+        for key, val in io_dict.items():
+            if isinstance(val, list) and val:
+                # Check if the list contains non-zero values
+                non_zero_values = [item for item in val if any(item)]
+                if non_zero_values:
+                    filtered_dict[key] = non_zero_values
+        return filtered_dict
+
+    # Filter the result to only include non-empty values
+    filtered_result = {
+        category: filter_non_empty(io_dict)
+        for category, io_dict in result.items()
+    }
+
+    print("get_all_IO:", filtered_result)
+
+    
+    # Get robot status for all IO(unfiltered)
     ret = robot.get_robot_status()
     if ret[0] == 0:
         # print("The robot state is:", ret[1])
@@ -201,6 +203,8 @@ if __name__ == "__main__":
     
     result = robot.get_all_IO()
     print("get_all_IO : ", result)
+    
+
     
     # Get TCP position
     ret = robot.get_tcp_position()
@@ -247,23 +251,20 @@ if __name__ == "__main__":
     else:
         print("Something happened, the error code is:", ret[0])
     
+       
+    # Joint move
+    robot.joint_move(joint_pos=[1, 0, 0, 0, 0, 0], move_mode=1, is_block=False, speed=0.05)
+    print("Wait")
+    time.sleep(1)
     
-    # Get all digital outputs
-    robot.get_active_digital_output()
-
-
+    
     # Get joint position
     ret = robot.get_joint_position()
     if ret[0] == 0:
         print("The joint position is:", ret[1])
     else:
         print("Something happened, the error code is:", ret[0])
-    
-    # Joint move
-    robot.joint_move(joint_pos=[1, 0, 0, 0, 0, 0], move_mode=1, is_block=False, speed=0.05)
-    print("Wait")
-    time.sleep(2)
-    
+        
     # Linear move
     tcp_pos = [0, 0, 0, 0, 0, 0]
     ret = robot.linear_move(tcp_pos, move_mode=1, is_block=True, speed=10)
@@ -275,3 +276,4 @@ if __name__ == "__main__":
     
     # Logout
     robot.logout()
+    

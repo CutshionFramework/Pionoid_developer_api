@@ -89,7 +89,7 @@ class URRobot(core_robot):
     def get_target_joint_moments(self):
         return self.robot_receive.getTargetMoment()
 
-    def get_actual_joint_positions(self):
+    def get_joint_position(self):
         return self.robot_receive.getActualQ()
 
     def get_actual_joint_velocities(self):
@@ -235,21 +235,6 @@ class URRobot(core_robot):
     def set_input_double_register(self, input_id, value):
         return self.robot_rtde_io.setInputDoubleRegister(input_id, value)
     
-    def get_active_digital_output(self):
-        # Set delay to ensure the result is reflected
-        time.sleep(0.1)
-        decimal_output_bits = self.robot_receive.getActualDigitalOutputBits()
-        
-        # Process the bits
-        result, enable_DO = self.decimal_to_binary_and_categorize(decimal_output_bits)
-        
-        # Print the categorized bits
-        print("[Enabled DO]")
-        for category, bits in enable_DO.items():
-            print(f"{category}: {bits}")
-        
-        return decimal_output_bits
-
     def set_digital_output(self, io_type, index, value):
         if io_type == 0:
             return self.set_standard_digital_out(index, value)
@@ -296,7 +281,7 @@ class URRobot(core_robot):
 
 # Example usage
 if __name__ == "__main__":
-    robot = URRobot("192.168.177.128")
+    robot = URRobot("192.168.88.128")
 
     # connect dashboard 
     robot.login()
@@ -312,7 +297,7 @@ if __name__ == "__main__":
     # Print the current robot receive
     
     print("Current timestamp:", robot.get_timestamp())
-    print("Actual joint positions:", robot.get_actual_joint_positions())
+    print("Actual joint positions:", robot.get_joint_position())
     print("Actual TCP pose:", robot.get_tcp_position())
     print("Robot mode:", robot.get_robot_mode())
     print("Robot status:", robot.get_robot_state())
@@ -327,7 +312,7 @@ if __name__ == "__main__":
     print("Set configurable DO", robot.set_configurable_digital_out(2, False))
     print("Set tool DO", robot.set_tool_digital_out(1, False)) 
     # robot.set_digital_output(1, 0, 0)
-    print("bit:", robot.get_active_digital_output(), flush=True)
+
     robot.enable_robot()
 
     result = robot.get_all_IO()

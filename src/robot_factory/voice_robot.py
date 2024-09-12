@@ -3,7 +3,7 @@ import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from robot.custom_robots.jaka_robot import JakaRobot
+from robot.custom_robots.UR_robot import URRobot
 from integrations.Openai_voice_control import VoiceControl
 
 def handle_robot_commands(robot, command):
@@ -34,13 +34,12 @@ def handle_robot_commands(robot, command):
     print(f"Unrecognized command: {command}")
 
 if __name__ == "__main__":
-    robot = JakaRobot("192.168.0.124")
+    robot = URRobot("192.168.88.128")
     robot.login()
     
     voice_control = VoiceControl()
     while True:
         command = voice_control.recognize_speech()  # Recognize speech and get the command as text
         if command:
-            doc = voice_control.process_command(command)  # Process the command text with Spacy
             handle_robot_commands(robot, command)  # Handle the robot's response to the command
-            print(f"Processed command: {doc}")
+            print(f"Processed command: {command}")

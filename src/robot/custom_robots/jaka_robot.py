@@ -160,8 +160,8 @@ class JakaRobot(core_robot):
                   
 # Example usage
 if __name__ == "__main__":
-    robot = JakaRobot("192.168.0.129")
-    
+    # robot = JakaRobot("192.168.0.120")
+    robot = JakaRobot("10.5.5.100")
     # Login
     robot.login()
     

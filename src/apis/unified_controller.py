@@ -98,7 +98,7 @@ def get_robot_from_request():
     except Exception as e:
         return None, jsonify({'message': f'Error during robot login: {e}'}), 500
 
-    return robot, None, None    
+    return robot, None, None
 
 ### Endpoints
 
@@ -193,14 +193,21 @@ def power_off():
     return jsonify({'message': f'{robot.__class__.__name__} powered off successfully with IP {robot.ip}'})
 
 # Route to save the robot's joint positions
-@app.route('/save_pos', methods=['POST'])
-def save_pos():
+@app.route('/save_move', methods=['POST'])
+def save_move():
     robot, error_response, status_code = get_robot_from_request()
     if error_response:
         return error_response, status_code
     
     try:
-        joint_positions = robot.get_joint_position()
+        joint_positions_tuple = robot.get_joint_position()
+        print(f"Joint positions: {joint_positions_tuple}")
+
+        all_IO = robot.get_all_IO()
+        print(f"IO data: {all_IO}")
+
+        joint_positions = joint_positions_tuple[1]
+
         if len(joint_positions) != 6:
             return jsonify({'message': 'Invalid joint positions'}), 400
         
@@ -211,16 +218,20 @@ def save_pos():
             'z': joint_positions[2],
             'RX': joint_positions[3],
             'RY': joint_positions[4],
-            'RZ': joint_positions[5]
+            'RZ': joint_positions[5],
+            'IO': all_IO
         }
-        
+
+        # Convert position_hash keys and values to str
+        position_hash_str = {str(k): str(v) for k, v in position_hash.items()}
+
         # Incremental field for move_name using Redis counter
         move_counter = redis_client.incr('move_counter')
         move_name = f'move_{move_counter}'
-        position_hash['move_name'] = move_name
+        position_hash_str['move_name'] = move_name
         
         # Store the hash in Redis
-        redis_client.hset(move_name, mapping=position_hash)
+        redis_client.hset(move_name, mapping=position_hash_str)
         
         # Store the move_name in a sorted set with the counter as the score
         redis_client.zadd('move_names', {move_name: move_counter})
@@ -231,87 +242,121 @@ def save_pos():
 
     return jsonify(position_hash)
 
-# Route to update the move order and joint positions
-@app.route('/update_move_pos', methods=['POST'])
-def update_move_pos():
+@app.route('/update_move', methods=['PUT'])
+def update_move():
     robot, error_response, status_code = get_robot_from_request()
     if error_response:
         return error_response, status_code
 
-    move_name = request.json.get('move_name')
-    new_order = request.json.get('new_order')
-    new_joint_positions = request.json.get('joint_positions')
+    # Retrieve the data from the request
+    original_name = request.json.get('originalName')
+    updated_item = request.json.get('updatedItem', {})
+
+    new_joint_positions = [
+        float(updated_item.get('x', 0)),
+        float(updated_item.get('y', 0)),
+        float(updated_item.get('z', 0)),
+        float(updated_item.get('rx', 0)),
+        float(updated_item.get('ry', 0)),
+        float(updated_item.get('rz', 0))
+    ]
+    new_IO = robot.get_all_IO()
     
-    if not move_name or new_order is None or not new_joint_positions:
-        return jsonify({'message': 'move_name, new_order, and joint_positions are required'}), 400
-    
-    if len(new_joint_positions) != 6:
-        return jsonify({'message': 'Invalid joint positions'}), 400
+    if not original_name or len(new_joint_positions) != 6:
+        return jsonify({'message': 'originalName and valid joint positions are required'}), 400
     
     try:
         # Retrieve the existing hash
-        position_hash = redis_client.hgetall(move_name)
+        position_hash = redis_client.hgetall(original_name)
         if not position_hash:
-            return jsonify({'message': f'{move_name} does not exist'}), 404
+            return jsonify({'message': f'{original_name} does not exist'}), 404
         
-        # Update the joint positions
-        position_hash = {
-            'x': new_joint_positions[0],
-            'y': new_joint_positions[1],
-            'z': new_joint_positions[2],
-            'RX': new_joint_positions[3],
-            'RY': new_joint_positions[4],
-            'RZ': new_joint_positions[5],
-            'move_name': move_name
+        # Retrieve the current score for the original_name
+        current_score = redis_client.zscore('move_names', original_name)
+        if current_score is None:
+            return jsonify({'message': 'Failed to retrieve the current score'}), 500
+        
+        # Update the joint positions and IO
+        new_name = updated_item.get('move_name', original_name)
+        position_hash_str = {
+            'x': str(new_joint_positions[0]),
+            'y': str(new_joint_positions[1]),
+            'z': str(new_joint_positions[2]),
+            'RX': str(new_joint_positions[3]),
+            'RY': str(new_joint_positions[4]),
+            'RZ': str(new_joint_positions[5]),
+            'IO': str(new_IO)
         }
         
-        # Store the updated hash with the same key
-        redis_client.hset(move_name, mapping=position_hash)
-        
         # Remove the old entry from the sorted set
-        redis_client.zrem('move_names', move_name)
+        redis_client.zrem('move_names', original_name)
         
-        # Update the sorted set with the new order
-        redis_client.zadd('move_names', {move_name: new_order})
+        # Store the updated hash with the new key
+        redis_client.hset(new_name, mapping=position_hash_str)
+        
+        # Add the updated name to the sorted set with the original score
+        redis_client.zadd('move_names', {new_name: current_score})
+        
+        # If the new name is different, remove the old entry
+        if new_name != original_name:
+            redis_client.delete(original_name)
         
     except Exception as e:
         print(f'Error during updating move order: {e}')
         return jsonify({'message': 'Error during updating move order'}), 500
 
-    return jsonify({'message': f'Move order and joint positions updated for {move_name}'})
+    return jsonify({'message': f'Move order and joint positions updated for {original_name}'})
 
-# Route to run all positions based on move_name
-@app.route('/run_all_positions', methods=['POST'])
-def run_all_positions():
+@app.route('/copy_move', methods=['POST'])
+def copy_move():
     robot, error_response, status_code = get_robot_from_request()
     if error_response:
         return error_response, status_code
-    
+
+    data = request.json
+    original_name = data.get('originalName')
+
+    if not original_name:
+        return jsonify({'message': 'originalName is required'}), 400
+
     try:
-        # Retrieve all move_name keys from the sorted set
-        move_names = redis_client.zrange('move_names', 0, -1)
-        
-        # Retrieve and execute each position
-        for move_name in move_names:
-            position_hash = redis_client.hgetall(move_name)
-            joint_positions = [
-                float(position_hash[b'x']),
-                float(position_hash[b'y']),
-                float(position_hash[b'z']),
-                float(position_hash[b'RX']),
-                float(position_hash[b'RY']),
-                float(position_hash[b'RZ'])
-            ]
-            robot.joint_move(joint_positions, 0, True, 1)#implement safezone later - optional
-        
+        # Retrieve the existing hash
+        existing_hash = redis_client.hgetall(original_name)
+        if not existing_hash:
+            return jsonify({'message': f'{original_name} does not exist'}), 404
+
+        # Generate the new move_name by appending '_copy' to the original_name
+        new_move_name = f'{original_name}_copy'
+
+        # Prepare the copied item data for storage
+        copied_item_data = {
+            'x': existing_hash.get(b'x', b'').decode('utf-8'),
+            'y': existing_hash.get(b'y', b'').decode('utf-8'),
+            'z': existing_hash.get(b'z', b'').decode('utf-8'),
+            'RX': existing_hash.get(b'RX', b'').decode('utf-8'),
+            'RY': existing_hash.get(b'RY', b'').decode('utf-8'),
+            'RZ': existing_hash.get(b'RZ', b'').decode('utf-8'),
+            'IO': existing_hash.get(b'IO', b'').decode('utf-8')
+        }
+
+        # Log the copied item data to debug
+        print(f'Copied item data: {copied_item_data}')
+
+        # Store the copied item in Redis with the new_move_name
+        redis_client.hset(new_move_name, mapping=copied_item_data)
+
+        # Store the new move_name in a sorted set with the highest score
+        current_max_score = redis_client.zrange('move_names', -1, -1, withscores=True)
+        new_score = (current_max_score[0][1] + 1) if current_max_score else 0
+        redis_client.zadd('move_names', {new_move_name: new_score})
+
     except Exception as e:
-        print(f'Error during running positions: {e}')
-        return jsonify({'message': 'Error during running positions'}), 500
+        print(f'Error during copying position: {e}')
+        return jsonify({'message': 'Error during copying position'}), 500
 
-    return jsonify({'message': 'All positions executed successfully'})
+    return jsonify({'message': f'Copied item saved successfully as {new_move_name}'})
 
-
-@app.route('/delete_move', methods=['POST'])
+@app.route('/delete_move', methods=['DELETE'])
 def delete_move():
     robot, error_response, status_code = get_robot_from_request()
     if error_response:
@@ -334,6 +379,106 @@ def delete_move():
         return jsonify({'message': 'Error during deleting move'}), 500
 
     return jsonify({'message': f'Move {move_name} deleted successfully'})
+
+@app.route('/get_moves', methods=['GET'])
+def get_moves():
+    try:
+        # Redis에 저장된 모든 move_name을 가져옴
+        move_names = redis_client.zrange('move_names', 0, -1)
+        
+        # 모든 포지션 데이터를 담을 리스트
+        movements = []
+        
+        # 각 move_name에 대해 해당 포지션 데이터를 가져옴
+        for move_name in move_names:
+            position_hash = redis_client.hgetall(move_name)
+            joint_positions = {
+                'x': float(position_hash[b'x']),
+                'y': float(position_hash[b'y']),
+                'z': float(position_hash[b'z']),
+                'RX': float(position_hash[b'RX']),
+                'RY': float(position_hash[b'RY']),
+                'RZ': float(position_hash[b'RZ']),
+                'move_name': move_name.decode('utf-8'),
+                'IO': position_hash.get(b'IO', b'').decode('utf-8')  # Ensure IO data is in string format
+            }
+            movements.append(joint_positions)
+        
+        return jsonify(movements)
+
+    except Exception as e:
+        print(f'Error during fetching movements: {e}')
+        return jsonify({'message': 'Error fetching movements'}), 500
+
+@app.route('/run_all_positions', methods=['POST'])
+def run_all_positions():
+    robot, error_response, status_code = get_robot_from_request()
+    if error_response:
+        return error_response, status_code
+    
+    try:
+        # Retrieve all move_name keys from the sorted set
+        move_names = redis_client.zrange('move_names', 0, -1)
+        
+        # Retrieve and execute each position
+        for move_name in move_names:
+            position_hash = redis_client.hgetall(move_name)
+            joint_positions = [
+                float(position_hash[b'x']),
+                float(position_hash[b'y']),
+                float(position_hash[b'z']),
+                float(position_hash[b'RX']),
+                float(position_hash[b'RY']),
+                float(position_hash[b'RZ'])
+            ]
+            IO = position_hash.get(b'IO', b'').decode('utf-8')  # Ensure IO data is in string format
+
+            robot.joint_move(joint_positions, 0, True, 1) # Optional safezone
+
+            # Apply IO settings if IO data is present
+            if IO:
+                robot.apply_io_settings(eval(IO))
+        
+    except Exception as e:
+        print(f'Error during running positions: {e}')
+        return jsonify({'message': 'Error during running positions'}), 500
+
+    return jsonify({'message': 'All positions executed successfully'})
+# # Route to run all positions based on move_name
+# @app.route('/run_all_positions', methods=['POST'])
+# def run_all_positions():
+#     robot, error_response, status_code = get_robot_from_request()
+#     if error_response:
+#         return error_response, status_code
+    
+#     try:
+#         # Retrieve all move_name keys from the sorted set
+#         move_names = redis_client.zrange('move_names', 0, -1)
+        
+#         # Retrieve and execute each position
+#         for move_name in move_names:
+#             position_hash = redis_client.hgetall(move_name)
+#             joint_positions = [
+#                 float(position_hash[b'x']),
+#                 float(position_hash[b'y']),
+#                 float(position_hash[b'z']),
+#                 float(position_hash[b'RX']),
+#                 float(position_hash[b'RY']),
+#                 float(position_hash[b'RZ'])
+#             ]
+#             IO = position_hash.get(b'IO')
+
+#             robot.joint_move(joint_positions, 0, True, 1)#implement safezone later - optional
+
+#             robot.apply_io_settings(IO)
+        
+#     except Exception as e:
+#         print(f'Error during running positions: {e}')
+#         return jsonify({'message': 'Error during running positions'}), 500
+
+#     return jsonify({'message': 'All positions executed successfully'})
+
+
 
 @app.route('/voice_command', methods=['POST'])
 def voice_command():

@@ -126,7 +126,9 @@ cython_debug/
 .vscode/
 
 # Ignore the yolov5s.pt file
-yolov5s.pt
+yolov8s.pt
+yolov8s-pose.pt
+yolov8s-seg.pt
 
 # Custom
 libs_64/

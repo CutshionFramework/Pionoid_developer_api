@@ -513,6 +513,71 @@ def run_all_moves():
 
     return jsonify({'message': 'All positions executed successfully'})
 
+@app.route('/get_io_status', methods=['GET'])
+def get_io_status():
+    robot, error_response, status_code = get_robot_from_request()
+    if error_response:
+        return error_response, status_code
+    
+    try:
+        all_IO = robot.get_all_IO()
+        
+        return jsonify(all_IO)
+
+    except Exception as e:
+        print(f'Error during fetching movements: {e}')
+        return jsonify({'message': 'Error fetching movements'}), 500
+    
+@app.route('/set_io_status', methods=['POST'])
+def set_io_status():
+    robot, error_response, status_code = get_robot_from_request()
+    if error_response:
+        return error_response, status_code
+    
+    data = request.json
+    io_type_str = data.get('io_type')  # 클라이언트에서 문자열로 넘어오는 io_type
+    io_type_mapping = {
+        'Cabinet': 0,
+        'Tool': 1,
+        'Extend': 2
+    }
+    
+    io_type = io_type_mapping.get(io_type_str)
+    
+    if io_type is None:  # 올바르지 않은 io_type인 경우
+        return jsonify({'message': 'Invalid io_type'}), 400
+
+    io_signal_type = data.get('io_signal_type')
+    index = data.get('index')
+    value = data.get('value')
+    print("result@@@ : ", io_type, io_signal_type, index, value)
+
+    try:
+        if io_type == 0:  # Cabinet
+            if io_signal_type.startswith('DO'):
+                print("result : ", io_type, io_signal_type, index, value)
+                robot.set_digital_output(io_type, index, value)
+            elif io_signal_type.startswith('AO'):
+                print("result : ", io_type, io_signal_type, index, value)
+                robot.set_analog_output(io_type, index, value)
+        elif io_type == 1:  # Tool
+            if io_signal_type.startswith('DO'):
+                print("result : ", io_type, io_signal_type, index, value)
+                robot.set_digital_output(io_type, index, value)
+        elif io_type == 2:  # Extend
+            print('Not sure how to use it')
+            # if io_signal_type.startswith('extio'):
+            #     robot.set_digital_output(io_type, index, value)  # Assuming extio is digital
+            # elif io_signal_type.startswith('out'):
+            #     robot.set_digital_output(io_type, index, value)
+
+
+        return jsonify({'message': 'IO status updated successfully'})
+
+    except Exception as e:
+        print(f'Error during setting IO status: {e}')
+        return jsonify({'message': 'Error setting IO status'}), 500
+
 
 @app.route('/voice_command', methods=['POST'])
 def voice_command():

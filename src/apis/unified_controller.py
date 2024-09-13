@@ -233,8 +233,12 @@ def save_move():
         # Store the hash in Redis
         redis_client.hset(move_name, mapping=position_hash_str)
         
-        # Store the move_name in a sorted set with the counter as the score
-        redis_client.zadd('move_names', {move_name: move_counter})
+        # Re-adjust the scores for consistent ordering
+        _reorder_scores()
+
+        # Add the new move_name to the sorted set with the highest score (last position)
+        max_score = redis_client.zcard('move_names') + 1  # max score is the next available number
+        redis_client.zadd('move_names', {move_name: max_score})
         
     except Exception as e:
         print(f'Error during saving position: {e}')
@@ -358,27 +362,75 @@ def copy_move():
 
 @app.route('/delete_move', methods=['DELETE'])
 def delete_move():
-    robot, error_response, status_code = get_robot_from_request()
-    if error_response:
-        return error_response, status_code
-
     move_name = request.json.get('move_name')
     
     if not move_name:
         return jsonify({'message': 'move_name is required'}), 400
     
     try:
-        # Delete the move_name from the hash
+        # Delete the move from the hash and sorted set
         redis_client.delete(move_name)
-        
-        # Remove the move_name from the sorted set
         redis_client.zrem('move_names', move_name)
-        
+
+        # Re-adjust the scores to maintain sequential order
+        _reorder_scores()
+
     except Exception as e:
         print(f'Error during deleting move: {e}')
         return jsonify({'message': 'Error during deleting move'}), 500
 
     return jsonify({'message': f'Move {move_name} deleted successfully'})
+
+@app.route('/reorder_moves', methods=['POST'])
+def reorder_moves():
+    data = request.json
+    move_name = data.get('move_name')
+    new_index = data.get('new_index')
+
+    if not move_name or new_index is None:
+        return jsonify({'message': 'move_name and new_index are required'}), 400
+
+    try:
+        adjusted_index = new_index + 1
+
+        # Retrieve all move_names and scores
+        move_names_with_scores = redis_client.zrange('move_names', 0, -1, withscores=True)
+
+        # Remove the current move_name
+        redis_client.zrem('move_names', move_name)
+
+        # Re-adjust scores of remaining items excluding the newly added item
+        new_list = []
+        for i, (name, score) in enumerate(move_names_with_scores):
+            decoded_name = name.decode('utf-8')
+            if decoded_name != move_name:
+                new_list.append((decoded_name, i + 1))  # Assign scores sequentially starting from 1
+
+        # Insert move_name at the appropriate position in the newly rearranged list
+        new_list.insert(adjusted_index - 1, (move_name, adjusted_index))  # Insert at adjusted_index
+
+        # Update the sorted set in Redis
+        redis_client.zremrangebyrank('move_names', 0, -1)
+        for i, (name, _) in enumerate(new_list):
+            redis_client.zadd('move_names', {name: i + 1})  # Reorder scores starting from 1 for all items
+
+    except Exception as e:
+        print(f'Error during reordering moves: {e}')
+        return jsonify({'message': 'Error during reordering moves'}), 500
+
+    return jsonify({'message': f'Move {move_name} reordered successfully to position {new_index}'})
+
+def _reorder_scores():
+    try:
+        # Retrieve all moves in the sorted set
+        move_names = redis_client.zrange('move_names', 0, -1)
+
+        # Assign new sequential scores
+        for index, move_name in enumerate(move_names):
+            redis_client.zadd('move_names', {move_name: index + 1})
+
+    except Exception as e:
+        print(f'Error during reordering scores: {e}')
 
 @app.route('/get_moves', methods=['GET'])
 def get_moves():

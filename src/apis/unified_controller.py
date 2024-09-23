@@ -548,9 +548,9 @@ def set_io_status():
         return jsonify({'message': 'Invalid io_type'}), 400
 
     io_signal_type = data.get('io_signal_type')
-    index = data.get('index')
-    value = data.get('value')
-    print("result@@@ : ", io_type, io_signal_type, index, value)
+    index = int(data.get('index')) + 1
+    value = int(data.get('value'))
+    print("result@@@ : ", io_type, io_signal_type, type(index), type(value))
 
     try:
         if io_type == 0:  # Cabinet

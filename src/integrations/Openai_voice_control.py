@@ -8,7 +8,7 @@ class VoiceControl:
         self.model = whisper.load_model("base")
 
     def recognize_speech(self, duration=4):
-        # Initialize PyAudio and stream
+        # Initialize PyAudio and stream media recorder api
         p = pyaudio.PyAudio()
         stream = p.open(format=pyaudio.paInt16, channels=1, rate=16000, input=True, frames_per_buffer=4096)
         print("Listening...")

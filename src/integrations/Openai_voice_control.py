@@ -44,7 +44,7 @@ class VoiceControl:
             result = self.model.transcribe(file_path)
             return result['text']
         finally:
-            print("bb")
+            print("bbbb")
             # Clean up the WAV file
             if os.path.exists(file_path):
                 os.remove(file_path)

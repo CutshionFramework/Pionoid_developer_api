@@ -612,7 +612,7 @@ def voice_command():
     file.save(file_path)
 
     voice_control = VoiceControl()
-    command = voice_control.recognize_speech_test_function(file_path)  # Recognize speech and get the command as text
+    command = voice_control.recognize_speech(file_path)  # Recognize speech and get the command as text
     if command:
         voice_robot.handle_robot_commands(robot, command)  # Handle the robot's response to the command
         return jsonify({'message': f'Processed command: {command}'})

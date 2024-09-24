@@ -7,6 +7,8 @@ from dotenv import load_dotenv
 import redis
 import pickle
 
+os.environ["PATH"] += os.pathsep + r"C:\ffmpeg\bin"
+
 # Load environment variables from .env file
 load_dotenv()
 
@@ -579,19 +581,45 @@ def set_io_status():
         return jsonify({'message': 'Error setting IO status'}), 500
 
 
+# @app.route('/voice_command', methods=['POST'])
+# def voice_command():
+#     robot, error_response, status_code = get_robot_from_request()
+#     if error_response:
+#         return error_response, status_code
+
+#     voice_control = VoiceControl()
+#     command = voice_control.recognize_speech()  # Recognize speech and get the command as text
+#     if command:
+#         voice_robot.handle_robot_commands(robot, command)  # Handle the robot's response to the command
+#         return jsonify({'message': f'Processed command: {command}'})
+#     else:
+#         return jsonify({'message': 'No command recognized'}), 400
+
+
 @app.route('/voice_command', methods=['POST'])
 def voice_command():
     robot, error_response, status_code = get_robot_from_request()
     if error_response:
         return error_response, status_code
+    
+    print("request.files : ", request.files)
+    if 'file' not in request.files:
+        return "The file has not been uploaded..", 400
+    
+    file = request.files['file']
+
+    file_path = os.path.join(os.getcwd(), 'uploaded_audio.wav')
+    file.save(file_path)
 
     voice_control = VoiceControl()
-    command = voice_control.recognize_speech()  # Recognize speech and get the command as text
+    command = voice_control.recognize_speech_test_function(file_path)  # Recognize speech and get the command as text
     if command:
         voice_robot.handle_robot_commands(robot, command)  # Handle the robot's response to the command
         return jsonify({'message': f'Processed command: {command}'})
     else:
         return jsonify({'message': 'No command recognized'}), 400
 
+
 if __name__ == '__main__':
-    app.run(debug=True)
+    # app.run(debug=True)
+    app.run(host='0.0.0.0', port=5000) 

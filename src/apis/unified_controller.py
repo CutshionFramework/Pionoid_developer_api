@@ -612,9 +612,6 @@ def voice_command():
     
     language = request.form.get('language')
     print("language:", language)
-
-    if language == 'kr':
-        language = 'ko'
     
     file = request.files['file']
     file_path = os.path.join(os.getcwd(), 'uploaded_audio.wav')

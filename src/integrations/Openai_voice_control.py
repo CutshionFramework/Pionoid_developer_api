@@ -39,9 +39,9 @@ class VoiceControl:
     #         if os.path.exists(wav_path):
     #             os.remove(wav_path)
 
-    def recognize_speech(self, file_path):
+    def recognize_speech(self, file_path, language):
         try:
-            result = self.model.transcribe(file_path)
+            result = self.model.transcribe(file_path, language=language)
             return result['text']
         finally:
             print("bbbb")

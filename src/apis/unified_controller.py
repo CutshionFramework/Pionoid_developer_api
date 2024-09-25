@@ -610,13 +610,18 @@ def voice_command():
     if 'file' not in request.files:
         return "The file has not been uploaded..", 400
     
-    file = request.files['file']
+    language = request.form.get('language')
+    print("language:", language)
 
+    if language == 'kr':
+        language = 'ko'
+    
+    file = request.files['file']
     file_path = os.path.join(os.getcwd(), 'uploaded_audio.wav')
     file.save(file_path)
 
     voice_control = VoiceControl()
-    command = voice_control.recognize_speech(file_path)  # Recognize speech and get the command as text
+    command = voice_control.recognize_speech(file_path, language)  # Recognize speech and get the command as text
     if command:
         voice_robot.handle_robot_commands(robot, command)  # Handle the robot's response to the command
         return jsonify({'message': f'Processed command: {command}'})

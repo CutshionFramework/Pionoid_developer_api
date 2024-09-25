@@ -20,9 +20,9 @@ from integrations.Openai_voice_control import VoiceControl
 from robot_factory import voice_robot
 
 app = Flask(__name__)
-# CORS(app)  # Enable CORS
-CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True, allow_headers=["Content-Type", "Authorization"], methods=["GET", "POST", "OPTIONS", "PUT", "DELETE"])
-
+CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True, 
+     allow_headers=["Content-Type", "Authorization", "ngrok-skip-browser-warning"], 
+     methods=["GET", "POST", "OPTIONS", "PUT", "DELETE"])
 
 # Get the secret key from environment variables
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
@@ -437,6 +437,10 @@ def _reorder_scores():
 @app.route('/get_moves', methods=['GET'])
 def get_moves():
     try:
+
+        if request.method == 'OPTIONS':
+            return '', 200
+
         move_names = redis_client.zrange('move_names', 0, -1)
         
         movements = []

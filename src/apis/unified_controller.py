@@ -510,6 +510,8 @@ def run_all_moves():
                 robot.joint_move(joint_positions, 0, True, 1)  # Optional safezone
 
                 # # Apply IO settings if IO data is present
+                # 1. I haven't been able to do the test in conjunction with the actual robot yet.
+                # 2. I didn't create the "apply_io_settings" function in UR_robot. 
                 # if IO:
                 #     robot.apply_io_settings(eval(IO))
         
@@ -541,7 +543,7 @@ def set_io_status():
         return error_response, status_code
     
     data = request.json
-    io_type_str = data.get('io_type')  # 클라이언트에서 문자열로 넘어오는 io_type
+    io_type_str = data.get('io_type')
     io_type_mapping = {
         'Cabinet': 0,
         'Tool': 1,
@@ -550,7 +552,7 @@ def set_io_status():
     
     io_type = io_type_mapping.get(io_type_str)
     
-    if io_type is None:  # 올바르지 않은 io_type인 경우
+    if io_type is None:
         return jsonify({'message': 'Invalid io_type'}), 400
 
     io_signal_type = data.get('io_signal_type')
@@ -584,22 +586,6 @@ def set_io_status():
         print(f'Error during setting IO status: {e}')
         return jsonify({'message': 'Error setting IO status'}), 500
 
-
-# @app.route('/voice_command', methods=['POST'])
-# def voice_command():
-#     robot, error_response, status_code = get_robot_from_request()
-#     if error_response:
-#         return error_response, status_code
-
-#     voice_control = VoiceControl()
-#     command = voice_control.recognize_speech()  # Recognize speech and get the command as text
-#     if command:
-#         voice_robot.handle_robot_commands(robot, command)  # Handle the robot's response to the command
-#         return jsonify({'message': f'Processed command: {command}'})
-#     else:
-#         return jsonify({'message': 'No command recognized'}), 400
-
-
 @app.route('/voice_command', methods=['POST'])
 def voice_command():
     robot, error_response, status_code = get_robot_from_request()
@@ -618,7 +604,7 @@ def voice_command():
     file.save(file_path)
 
     voice_control = VoiceControl()
-    command = voice_control.recognize_speech(file_path, language)  # Recognize speech and get the command as text
+    command = voice_control.recognize_speech(file_path)  # Recognize speech and get the command as text
     if command:
         voice_robot.handle_robot_commands(robot, command)  # Handle the robot's response to the command
         return jsonify({'message': f'Processed command: {command}'})

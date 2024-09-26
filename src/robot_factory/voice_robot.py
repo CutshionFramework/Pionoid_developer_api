@@ -18,20 +18,6 @@ def handle_robot_commands(robot, command):
         "on": robot.enable_robot,
         "oh": robot.enable_robot
     }
-    
-    # # Iterate through the command map to find and execute the appropriate action
-    # for key, action in command_map.items():
-    #     if key in command:
-    #         result = action()  # Execute the action and store the result
-    #         print(f"Executed command: {key}")
-    #         if isinstance(result, tuple):  # If the result is a tuple, handle it appropriately
-    #             if result[0] == 0:
-    #                 print(f"The result of '{key}' is:", result[1])
-    #             else:
-    #                 print(f"Something happened during '{key}', the error code is:", result[0])
-    #         elif result is not None:  # Print the result if it is not None and not a tuple
-    #             print(f"Output: {result}")
-    #         return
 
     # Iterate through the command map to find and execute the appropriate action
     for key, action in command_map.items():
@@ -41,15 +27,19 @@ def handle_robot_commands(robot, command):
             
             if isinstance(result, tuple):  # If the result is a tuple, handle it appropriately
                 print(f"Command result for '{key}': {result}")  # Debug log
-                
-                if len(result) > 1:  # Check the length before accessing result[1]
+
+                if len(result) > 1:  # If the result has more than one element
                     if result[0] == 0:
                         print(f"The result of '{key}' is:", result[1])
                     else:
                         print(f"Something happened during '{key}', the error code is:", result[0])
                 else:
-                    print(f"Unexpected tuple length for '{key}':", result)
-            elif result is not None:  # Print the result if it is not None and not a tuple
+                    # Handle single-element tuple, assuming result[0] is the status code
+                    if result[0] == 0:
+                        print(f"Command '{key}' executed successfully.")
+                    else:
+                        print(f"Command '{key}' failed with error code:", result[0])
+            else:
                 print(f"Output: {result}")
             return
 

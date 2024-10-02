@@ -93,7 +93,8 @@ class JakaRobot(core_robot):
         return self.robot.set_analog_output(io_type, index, value)
     
     def get_joint_position(self):
-        return self.robot.get_joint_position()
+        result = self.robot.get_joint_position()
+        return result[1]
     
     def linear_move(self, tcp_pos, move_mode, is_block, speed):
         return self.robot.linear_move(tcp_pos, move_mode, is_block, speed)
@@ -156,18 +157,10 @@ class JakaRobot(core_robot):
             for index, value in enumerate(all_IO['TOOL']['tio_dout'][0]):
                 self.set_digital_output(IO_TOOL, index, value)
 
-        if 'tio_ain' in all_IO['TOOL'] and all_IO['TOOL']['tio_ain']:
-            for index, value in enumerate(all_IO['TOOL']['tio_ain'][0]):
-                self.set_analog_output(IO_TOOL, index, value)
-
         # Check if 'EXTEND' has 'out' and 'aout' keys and if they contain data
         if 'out' in all_IO['EXTEND'] and all_IO['EXTEND']['out']:
             for index, value in enumerate(all_IO['EXTEND']['out']):
                 self.set_digital_output(IO_EXTEND, index, value)
-
-        if 'aout' in all_IO['EXTEND'] and all_IO['EXTEND']['aout']:
-            for index, value in enumerate(all_IO['EXTEND']['aout']):
-                self.set_analog_output(IO_EXTEND, index, value)
 
 
                   

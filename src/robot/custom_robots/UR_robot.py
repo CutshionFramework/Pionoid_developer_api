@@ -155,12 +155,12 @@ class URRobot(core_robot):
 
         # Save the categorized digital outputs
         all_IO["CABINET"]["dout"] = dout_categories["CABINET-STANDARD"]
-        all_IO["EXTEND"]["dout"] = dout_categories["EXTEND-CONFIG"]
+        all_IO["EXTEND"]["out"] = dout_categories["EXTEND-CONFIG"]
         all_IO["TOOL"]["tio_dout"] = dout_categories["TOOL"]
 
         # Save the categorized digital inputs
         all_IO["CABINET"]["din"] = din_categories["CABINET-STANDARD"]
-        all_IO["EXTEND"]["din"] = din_categories["EXTEND-CONFIG"]
+        all_IO["EXTEND"]["in"] = din_categories["EXTEND-CONFIG"]
         all_IO["TOOL"]["tio_din"] = din_categories["TOOL"]
 
         # Save the analog outputs and inputs directly (assuming they are float values)
@@ -234,16 +234,28 @@ class URRobot(core_robot):
 
     def set_input_double_register(self, input_id, value):
         return self.robot_rtde_io.setInputDoubleRegister(input_id, value)
-    
-    def set_digital_output(self, io_type, index, value):
-        if io_type == 0:
-            return self.set_standard_digital_out(index, value)
-        elif io_type == 1:
-            return self.set_tool_digital_out(index, value)
-        elif io_type == 2:
-            return self.set_configurable_digital_out(index, value)
-        else:
-            raise ValueError("Invalid io_type")
+          
+    def apply_io_settings(self, all_IO):
+        # Check if 'CABINET' has 'dout' and 'aout' keys and if they contain data
+        print("apply_io_settings")
+        if 'dout' in all_IO['CABINET'] and all_IO['CABINET']['dout']:
+            for index, value in enumerate(all_IO['CABINET']['dout'][0]):
+                self.set_standard_digital_out(index, value)
+
+        if 'aout' in all_IO['CABINET'] and all_IO['CABINET']['aout']:
+            for index, value in enumerate(all_IO['CABINET']['aout'][0]):
+                self.set_analog_output_current(index, value)
+
+        # Check if 'TOOL' has 'tio_dout' and 'tio_ain' keys and if they contain data
+        if 'tio_dout' in all_IO['TOOL'] and all_IO['TOOL']['tio_dout']:
+            for index, value in enumerate(all_IO['TOOL']['tio_dout'][0]):
+                self.set_tool_digital_out(index, value)
+
+        # Check if 'EXTEND' has 'out' and 'aout' keys and if they contain data
+        if 'out' in all_IO['EXTEND'] and all_IO['EXTEND']['out']:
+            for index, value in enumerate(all_IO['EXTEND']['out']):
+                self.set_configurable_digital_out(index, value)
+
         
 
     # Helper - Convert decimal result to binary and categorize each DO
@@ -281,7 +293,7 @@ class URRobot(core_robot):
 
 # Example usage
 if __name__ == "__main__":
-    robot = URRobot("192.168.88.128")
+    robot = URRobot("192.168.177.128")
 
     # connect dashboard 
     robot.login()
@@ -310,13 +322,12 @@ if __name__ == "__main__":
     
     print("Set standard DO", robot.set_standard_digital_out(2, False))
     print("Set configurable DO", robot.set_configurable_digital_out(2, False))
-    print("Set tool DO", robot.set_tool_digital_out(1, False)) 
-    # robot.set_digital_output(1, 0, 0)
+    print("Set tool DO", robot.set_tool_digital_out(1, False))
 
     robot.enable_robot()
 
     result = robot.get_all_IO()
-    print(result)
+    print("result : ", result)
             
     # Powers off the robot arm.
     # robot.power_off()

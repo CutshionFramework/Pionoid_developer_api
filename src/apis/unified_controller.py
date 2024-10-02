@@ -202,13 +202,14 @@ def save_move():
         return error_response, status_code
     
     try:
-        joint_positions_tuple = robot.get_joint_position()
-        print(f"Joint positions: {joint_positions_tuple}")
+        joint_positions = robot.get_joint_position()
+        # joint_positions_tuple = robot.get_joint_position()
+        # print(f"Joint positions: {joint_positions_tuple}")
 
         all_IO = robot.get_all_IO()
         print(f"IO data: {all_IO}")
 
-        joint_positions = joint_positions_tuple[1]
+        # joint_positions = joint_positions_tuple[1]
 
         if len(joint_positions) != 6:
             return jsonify({'message': 'Invalid joint positions'}), 400

@@ -15,6 +15,10 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 libs_64_path = os.path.join(current_dir, '..', '..', '..', 'libs_64')
 sys.path.append(libs_64_path)
 
+IO_CABINET =0 #controller panel IO
+IO_TOOL = 1 #Tool IO
+IO_EXTEND = 2 #extension IO
+
 # Import the jkrc.pyd library
 try:
     import jkrc
@@ -85,6 +89,9 @@ class JakaRobot(core_robot):
     def set_digital_output(self, io_type, index, value):
         return self.robot.set_digital_output(io_type, index, value)
     
+    def set_analog_output(self, io_type, index, value):
+        return self.robot.set_analog_output(io_type, index, value)
+    
     def get_joint_position(self):
         return self.robot.get_joint_position()
     
@@ -131,11 +138,42 @@ class JakaRobot(core_robot):
         all_IO["EXTEND"]["extio"].append(ret[1][17])
         
         return all_IO
+    
+    def apply_io_settings(self, all_IO):
+        # Check if 'CABINET' has 'dout' and 'aout' keys and if they contain data
+        print("apply_io_settings")
+        if 'dout' in all_IO['CABINET'] and all_IO['CABINET']['dout']:
+            for index, value in enumerate(all_IO['CABINET']['dout'][0]):
+                # print(index, value)
+                self.set_digital_output(IO_CABINET, index, value)
+
+        if 'aout' in all_IO['CABINET'] and all_IO['CABINET']['aout']:
+            for index, value in enumerate(all_IO['CABINET']['aout'][0]):
+                self.set_analog_output(IO_CABINET, index, value)
+
+        # Check if 'TOOL' has 'tio_dout' and 'tio_ain' keys and if they contain data
+        if 'tio_dout' in all_IO['TOOL'] and all_IO['TOOL']['tio_dout']:
+            for index, value in enumerate(all_IO['TOOL']['tio_dout'][0]):
+                self.set_digital_output(IO_TOOL, index, value)
+
+        if 'tio_ain' in all_IO['TOOL'] and all_IO['TOOL']['tio_ain']:
+            for index, value in enumerate(all_IO['TOOL']['tio_ain'][0]):
+                self.set_analog_output(IO_TOOL, index, value)
+
+        # Check if 'EXTEND' has 'out' and 'aout' keys and if they contain data
+        if 'out' in all_IO['EXTEND'] and all_IO['EXTEND']['out']:
+            for index, value in enumerate(all_IO['EXTEND']['out']):
+                self.set_digital_output(IO_EXTEND, index, value)
+
+        if 'aout' in all_IO['EXTEND'] and all_IO['EXTEND']['aout']:
+            for index, value in enumerate(all_IO['EXTEND']['aout']):
+                self.set_analog_output(IO_EXTEND, index, value)
+
 
                   
 # Example usage
 if __name__ == "__main__":
-    robot = JakaRobot("192.168.74.4")
+    robot = JakaRobot("192.168.0.127")
     
     # Login
     robot.login()
@@ -184,8 +222,7 @@ if __name__ == "__main__":
     }
 
     print("get_all_IO:", filtered_result)
-
-    
+  
     # Get robot status for all IO(unfiltered)
     ret = robot.get_robot_status()
     if ret[0] == 0:
@@ -202,7 +239,7 @@ if __name__ == "__main__":
         print("Something happened, the error code is:", ret[0])
     
     result = robot.get_all_IO()
-    print("get_all_IO : ", result)
+    print("@@@get_all_IO@@@ : ", result)
     
 
     
@@ -270,6 +307,8 @@ if __name__ == "__main__":
     ret = robot.linear_move(tcp_pos, move_mode=1, is_block=True, speed=10)
     print(ret[0])
     time.sleep(1)
+
+    robot.apply_io_settings(result)
     
     robot.disable_robot()
     robot.power_off()

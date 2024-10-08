@@ -204,9 +204,9 @@ def shut_down():
         robot.shut_down()
     except Exception as e:
         print(f'Error during robot shut down: {e}')
-        return jsonify({'message': 'Error during robot power off'}), 500
+        return jsonify({'message': 'Error during robot shut down'}), 500
 
-    return jsonify({'message': f'{robot.__class__.__name__} powered off successfully with IP {robot.ip}'})
+    return jsonify({'message': f'{robot.__class__.__name__} shut down successfully with IP {robot.ip}'})
 
 
 # Route to save the robot's joint positions

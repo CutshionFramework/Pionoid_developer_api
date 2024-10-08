@@ -39,6 +39,11 @@ class URRobot(core_robot):
             raise RuntimeError("Dashboard client is not connected")
         self.robot_dashboard_client.brakeRelease()
 
+    def shut_down(self):
+        if not self.is_connected():
+            raise RuntimeError("Dashboard client is not connected")
+        self.robot_dashboard_client.shutdown()
+
     def disable_robot(self):
         if not self.is_connected():
             raise RuntimeError("Dashboard client is not connected")

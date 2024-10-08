@@ -36,6 +36,10 @@ class core_robot(ABC):
         pass
 
     @abstractmethod
+    def shut_down(self):
+        pass
+
+    @abstractmethod
     def joint_move(self, joint_pos, move_mode, is_block, speed):
         pass
 

@@ -50,6 +50,9 @@ class JakaRobot(core_robot):
     def disable_robot(self):
         return self.robot.disable_robot()
     
+    def shut_down(self):
+        return self.robot.shut_down()
+    
     def joint_move(self, joint_pos, move_mode, is_block, speed):
         return self.robot.joint_move(joint_pos=joint_pos, move_mode=move_mode, is_block=is_block, speed=speed)
     
@@ -93,7 +96,8 @@ class JakaRobot(core_robot):
         return self.robot.set_analog_output(io_type, index, value)
     
     def get_joint_position(self):
-        return self.robot.get_joint_position()
+        result = self.robot.get_joint_position()
+        return result[1]
     
     def linear_move(self, tcp_pos, move_mode, is_block, speed):
         return self.robot.linear_move(tcp_pos, move_mode, is_block, speed)

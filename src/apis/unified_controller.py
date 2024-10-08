@@ -194,6 +194,21 @@ def power_off():
 
     return jsonify({'message': f'{robot.__class__.__name__} powered off successfully with IP {robot.ip}'})
 
+# Route to power off the robot based on token
+@app.route('/shut_down', methods=['POST'])
+def shut_down():
+    robot, error_response, status_code = get_robot_from_request()
+    if error_response:
+        return error_response, status_code
+    try:
+        robot.shut_down()
+    except Exception as e:
+        print(f'Error during robot shut down: {e}')
+        return jsonify({'message': 'Error during robot power off'}), 500
+
+    return jsonify({'message': f'{robot.__class__.__name__} powered off successfully with IP {robot.ip}'})
+
+
 # Route to save the robot's joint positions
 @app.route('/save_move', methods=['POST'])
 def save_move():
@@ -202,13 +217,14 @@ def save_move():
         return error_response, status_code
     
     try:
-        joint_positions_tuple = robot.get_joint_position()
-        print(f"Joint positions: {joint_positions_tuple}")
+        joint_positions = robot.get_joint_position()
+        # joint_positions_tuple = robot.get_joint_position()
+        # print(f"Joint positions: {joint_positions_tuple}")
 
         all_IO = robot.get_all_IO()
         print(f"IO data: {all_IO}")
 
-        joint_positions = joint_positions_tuple[1]
+        # joint_positions = joint_positions_tuple[1]
 
         if len(joint_positions) != 6:
             return jsonify({'message': 'Invalid joint positions'}), 400

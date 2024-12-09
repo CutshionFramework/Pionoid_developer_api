@@ -1,1 +1,127 @@
-print("appstore")
+import subprocess
+from flask import Blueprint, jsonify
+import time
+import requests
+import os
+import webbrowser
+
+appstore = Blueprint('appstore', __name__)
+
+# Docker Desktop 설치 여부 확인 함수
+def is_docker_installed():
+    docker_desktop_path = r"C:\Program Files\Docker\Docker\Docker Desktop.exe"
+    return os.path.exists(docker_desktop_path)
+
+# Docker 데몬 상태 확인 함수
+def is_docker_daemon_ready():
+    try:
+        result = subprocess.run(["docker", "info"], capture_output=True, text=True)
+        return result.returncode == 0
+    except Exception:
+        return False
+
+# Docker Desktop 자동 설치 함수 (옵션)
+def install_docker_desktop():
+    installer_url = "https://desktop.docker.com/win/stable/Docker Desktop Installer.exe"  # Docker Desktop 설치 파일 URL
+    installer_path = r"C:\temp\Docker Desktop Installer.exe"
+    try:
+        # 다운로드
+        response = requests.get(installer_url, stream=True)
+        with open(installer_path, 'wb') as file:
+            for chunk in response.iter_content(chunk_size=1024):
+                file.write(chunk)
+
+        # 설치 실행
+        subprocess.run([installer_path, "--quiet", "--install"], check=True)
+        return True
+    except Exception as e:
+        print(f"Failed to download or install Docker Desktop: {e}")
+        return False
+
+# 1. Docker Pull API
+@appstore.route('/api/download', methods=['POST'])
+def download():
+    try:
+        # Docker Desktop 설치 여부 확인
+        if not is_docker_installed():
+            return jsonify({"message": "Docker Desktop not installed. Please install it manually."}), 500
+
+        else:
+            print("도커 다운되어있는 상태")
+
+        # Docker Desktop 실행 여부 확인
+        if not is_docker_daemon_ready():
+            docker_desktop_path = r"C:\Program Files\Docker\Docker\Docker Desktop.exe"
+            subprocess.Popen(docker_desktop_path, shell=True)
+            time.sleep(10)  # Docker 데몬이 실행될 시간을 기다림
+
+            if not is_docker_daemon_ready():
+                return jsonify({"message": "Docker daemon is not ready. Please wait and try again."}), 500
+
+        # Docker 이미지 다운로드
+        image_name = "sromerof202/palletizing_app-server:latest"
+        result = subprocess.run(
+            ["docker", "pull", image_name],
+            capture_output=True, text=True
+        )
+        if result.returncode == 0:
+            return jsonify({"message": "Download successful", "output": result.stdout}), 200
+        else:
+            return jsonify({"message": "Download failed", "error": result.stderr}), 500
+    except Exception as e:
+        return jsonify({"message": "Error occurred", "error": str(e)}), 500
+
+@appstore.route('/api/open', methods=['POST'])
+def open_docker():
+    try:
+        # Docker Desktop 실행 파일 경로
+        docker_desktop_path = r"C:\Program Files\Docker\Docker\Docker Desktop.exe"
+
+        # Docker Desktop이 이미 실행 중인지 확인
+        result = subprocess.run(
+            ["tasklist", "/FI", "IMAGENAME eq Docker Desktop.exe"], capture_output=True, text=True
+        )
+        if "Docker Desktop.exe" not in result.stdout:
+            # Docker Desktop 실행
+            subprocess.Popen(docker_desktop_path, shell=True)
+            time.sleep(5)  # 잠시 대기
+        else:
+            print("Docker Desktop is already running.")
+
+        # Docker 데몬 상태 확인
+        if not is_docker_daemon_ready():
+            return jsonify({"message": "Docker daemon is not ready. Please wait and try again."}), 500
+
+        # 컨테이너 이름 설정
+        container_name = "palletizing_app_server"
+        image_name = "sromerof202/palletizing_app-server:latest"
+
+        # 기존 컨테이너가 있는지 확인
+        check_container_result = subprocess.run(
+            ["docker", "ps", "-a", "-q", "--filter", f"name={container_name}"],
+            capture_output=True, text=True
+        )
+
+        if check_container_result.returncode == 0 and check_container_result.stdout.strip():
+            # 기존 컨테이너가 있으면 시작
+            start_container_result = subprocess.run(
+                ["docker", "start", container_name],
+                capture_output=True, text=True
+            )
+        else:
+            # 컨테이너가 없으면 새로 실행
+            start_container_result = subprocess.run(
+                ["docker", "run", "-d", "--name", container_name, image_name],  # -d는 백그라운드 실행
+                capture_output=True, text=True
+            )
+
+        if start_container_result.returncode == 0:
+            webbrowser.open("http://localhost:5000")
+            return jsonify({"message": "Docker Desktop opened and container started successfully"}), 200
+        else:
+            return jsonify({"message": "Failed to start container", "error": start_container_result.stderr}), 500
+
+    except Exception as e:
+        return jsonify({"message": "Error occurred while opening Docker Desktop and starting container", "error": str(e)}), 500
+
+

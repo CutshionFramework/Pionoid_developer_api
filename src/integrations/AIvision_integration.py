@@ -182,8 +182,8 @@ if __name__ == "__main__":
 
         #-----------------------------------------------------------------------------
         # Test object detection(detect_person)
-        #person_detected, results = ai_vision.detect_person(frame)
-        #print(f"Person detected: {person_detected}")
+        person_detected, results = ai_vision.detect_person(frame)
+        print(f"Person detected: {person_detected}")
 
         # Test get_person_pose
         poses = ai_vision.get_person_pose(frame)

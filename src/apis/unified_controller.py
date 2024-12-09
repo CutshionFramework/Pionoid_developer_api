@@ -503,6 +503,10 @@ def run_all_moves():
                     print(f'Error converting joint positions to float: {ve}')
                     return jsonify({'message': 'Invalid joint position values in Redis'}), 500
 
+                # If it's a UR robot, convert the joint_positions to negative
+                if isinstance(robot, URRobot):  # Check if it is an instance of the URRobot class
+                    joint_positions = [-pos for pos in joint_positions]  # Convert all joint_positions values to negative
+                    
                 # Ensure IO data is decoded and valid
                 IO = position_hash.get(b'IO', b'').decode('utf-8')  # Ensure IO data is in string format
 

@@ -169,11 +169,32 @@ class JakaRobot(core_robot):
             for index, value in enumerate(all_IO['EXTEND']['aout']):
                 self.set_analog_output(IO_EXTEND, index, value)
 
-
+def measure_execution_time(func, *args, **kwargs):
+        # 시작 시간 기록
+        start_time = time.perf_counter()
+        
+        # 함수 실행
+        result = func(*args, **kwargs)
+        
+        # 종료 시간 기록
+        end_time = time.perf_counter()
+        
+        # 경과 시간 계산
+        execution_time = end_time - start_time
+        print(f"Execution time: {execution_time:.6f} seconds")
+        
+        return result    
                   
 # Example usage
 if __name__ == "__main__":
-    robot = JakaRobot("192.168.0.127")
+
+    PI=3.1415926
+    joint_pos=[PI/2,PI/3,0,PI/4,0,0]
+    
+    robot = JakaRobot("192.168.0.251")
+    
+    start_time = time.perf_counter()
+    print(start_time)
     
     # Login
     robot.login()
@@ -182,137 +203,142 @@ if __name__ == "__main__":
     robot.power_on()
     robot.enable_robot()
     
-    # Set payload
-    robot.set_payload(mass=1, centroid=[0.01, 0.02, 0.03])
-    ret = robot.get_payload()
-    if ret[0] == 0:
-        print("The payload is:", ret[1])
-    else:
-        print("Something happened, the error code is:", ret[0])
+    robot.joint_move(joint_pos,move_mode=0, is_block=True, speed=1)
     
-    # Get robot state
-    ret = robot.get_robot_state()
-    if ret[0] == 0:
-        print("The robot state is:", ret[1])
-    else:
-        print("Something happened, the error code is:", ret[0])
+    end_time = time.perf_counter()
+    print(end_time)
+    
+    # # Set payload
+    # robot.set_payload(mass=1, centroid=[0.01, 0.02, 0.03])
+    # ret = robot.get_payload()
+    # if ret[0] == 0:
+    #     print("The payload is:", ret[1])
+    # else:
+    #     print("Something happened, the error code is:", ret[0])
+    
+    # # Get robot state
+    # ret = robot.get_robot_state()
+    # if ret[0] == 0:
+    #     print("The robot state is:", ret[1])
+    # else:
+    #     print("Something happened, the error code is:", ret[0])
     
 
-    # Get robot status for all IO(filtered)
-    ret = robot.get_robot_status()
-    if ret[0] != 0:
-        print("Something happened, the error code is:", ret[0])
-    result = robot.get_all_IO()
+    # # Get robot status for all IO(filtered)
+    # ret = robot.get_robot_status()
+    # if ret[0] != 0:
+    #     print("Something happened, the error code is:", ret[0])
+    # result = robot.get_all_IO()
 
-    # filter out empty or zero values
-    def filter_non_empty(io_dict):
-        filtered_dict = {}
-        for key, val in io_dict.items():
-            if isinstance(val, list) and val:
-                # Check if the list contains non-zero values
-                non_zero_values = [item for item in val if any(item)]
-                if non_zero_values:
-                    filtered_dict[key] = non_zero_values
-        return filtered_dict
+    # # filter out empty or zero values
+    # def filter_non_empty(io_dict):
+    #     filtered_dict = {}
+    #     for key, val in io_dict.items():
+    #         if isinstance(val, list) and val:
+    #             # Check if the list contains non-zero values
+    #             non_zero_values = [item for item in val if any(item)]
+    #             if non_zero_values:
+    #                 filtered_dict[key] = non_zero_values
+    #     return filtered_dict
 
-    # Filter the result to only include non-empty values
-    filtered_result = {
-        category: filter_non_empty(io_dict)
-        for category, io_dict in result.items()
-    }
+    # # Filter the result to only include non-empty values
+    # filtered_result = {
+    #     category: filter_non_empty(io_dict)
+    #     for category, io_dict in result.items()
+    # }
 
-    print("get_all_IO:", filtered_result)
+    # print("get_all_IO:", filtered_result)
   
-    # Get robot status for all IO(unfiltered)
-    ret = robot.get_robot_status()
-    if ret[0] == 0:
-        # print("The robot state is:", ret[1])
-        print("dout : ", ret[1][10])
-        print("din : ", ret[1][11])
-        print("aout : ", ret[1][12])
-        print("ain : ", ret[1][13])
-        print("tio_dout : ", ret[1][14])
-        print("tio_din : ", ret[1][15])
-        print("tio_ain : ", ret[1][16])
-        print("extio : ", ret[1][17])
-    else:
-        print("Something happened, the error code is:", ret[0])
+    # # Get robot status for all IO(unfiltered)
+    # ret = robot.get_robot_status()
+    # if ret[0] == 0:
+    #     # print("The robot state is:", ret[1])
+    #     print("dout : ", ret[1][10])
+    #     print("din : ", ret[1][11])
+    #     print("aout : ", ret[1][12])
+    #     print("ain : ", ret[1][13])
+    #     print("tio_dout : ", ret[1][14])
+    #     print("tio_din : ", ret[1][15])
+    #     print("tio_ain : ", ret[1][16])
+    #     print("extio : ", ret[1][17])
+    # else:
+    #     print("Something happened, the error code is:", ret[0])
     
-    result = robot.get_all_IO()
-    print("@@@get_all_IO@@@ : ", result)
+    # result = robot.get_all_IO()
+    # print("@@@get_all_IO@@@ : ", result)
     
 
     
-    # Get TCP position
-    ret = robot.get_tcp_position()
-    if ret[0] == 0:
-        print("The TCP position is:", ret[1])
-    else:
-        print("Something happened, the error code is:", ret[0])
+    # # Get TCP position
+    # ret = robot.get_tcp_position()
+    # if ret[0] == 0:
+    #     print("The TCP position is:", ret[1])
+    # else:
+    #     print("Something happened, the error code is:", ret[0])
     
-    # Get and set tool data
-    ret = robot.get_tool_data(1)
-    if ret[0] == 0:
-        print("The tool data is:", ret[1])
-    else:
-        print("Something happened, the error code is:", ret[0])
+    # # Get and set tool data
+    # ret = robot.get_tool_data(1)
+    # if ret[0] == 0:
+    #     print("The tool data is:", ret[1])
+    # else:
+    #     print("Something happened, the error code is:", ret[0])
     
-    robot.set_tool_data(1, [0, 0, 1, 0, 0, 0], 'testlx')
-    time.sleep(0.5)
-    ret = robot.get_tool_data(1)
-    if ret[0] == 0:
-        print("The tool data is:", ret[1])
-    else:
-        print("Something happened, the error code is:", ret[0])
+    # robot.set_tool_data(1, [0, 0, 1, 0, 0, 0], 'testlx')
+    # time.sleep(0.5)
+    # ret = robot.get_tool_data(1)
+    # if ret[0] == 0:
+    #     print("The tool data is:", ret[1])
+    # else:
+    #     print("Something happened, the error code is:", ret[0])
     
-    # Get and set tool ID
-    ret = robot.get_tool_id()
-    print("Tool ID:", ret)
-    robot.set_tool_id(1)
-    time.sleep(0.5)
-    ret = robot.get_tool_id()
-    print("Tool ID:", ret)
+    # # Get and set tool ID
+    # ret = robot.get_tool_id()
+    # print("Tool ID:", ret)
+    # robot.set_tool_id(1)
+    # time.sleep(0.5)
+    # ret = robot.get_tool_id()
+    # print("Tool ID:", ret)
     
-    # Get and set digital output
-    ret = robot.get_digital_output(0, 2)
-    if ret[0] == 0:
-        print("The DO2 is:", ret[1])
-    else:
-        print("Something happened, the error code is:", ret[0])
+    # # Get and set digital output
+    # ret = robot.get_digital_output(0, 2)
+    # if ret[0] == 0:
+    #     print("The DO2 is:", ret[1])
+    # else:
+    #     print("Something happened, the error code is:", ret[0])
     
-    robot.set_digital_output(0, 2, 1)
-    time.sleep(0.1)
-    ret = robot.get_digital_output(0, 2)
-    if ret[0] == 0:
-        print("The DO2 is:", ret[1])
-    else:
-        print("Something happened, the error code is:", ret[0])
+    # robot.set_digital_output(0, 2, 1)
+    # time.sleep(0.1)
+    # ret = robot.get_digital_output(0, 2)
+    # if ret[0] == 0:
+    #     print("The DO2 is:", ret[1])
+    # else:
+    #     print("Something happened, the error code is:", ret[0])
     
        
-    # Joint move
-    robot.joint_move(joint_pos=[1, 0, 0, 0, 0, 0], move_mode=1, is_block=False, speed=0.05)
-    print("Wait")
-    time.sleep(1)
+    # # Joint move
+    # robot.joint_move(joint_pos=[1, 0, 0, 0, 0, 0], move_mode=1, is_block=False, speed=0.05)
+    # print("Wait")
+    # time.sleep(1)
     
     
-    # Get joint position
-    ret = robot.get_joint_position()
-    if ret[0] == 0:
-        print("The joint position is:", ret[1])
-    else:
-        print("Something happened, the error code is:", ret[0])
+    # # Get joint position
+    # ret = robot.get_joint_position()
+    # if ret[0] == 0:
+    #     print("The joint position is:", ret[1])
+    # else:
+    #     print("Something happened, the error code is:", ret[0])
         
-    # Linear move
-    tcp_pos = [0, 0, 0, 0, 0, 0]
-    ret = robot.linear_move(tcp_pos, move_mode=1, is_block=True, speed=10)
-    print(ret[0])
-    time.sleep(1)
+    # # Linear move
+    # tcp_pos = [0, 0, 0, 0, 0, 0]
+    # ret = robot.linear_move(tcp_pos, move_mode=1, is_block=True, speed=10)
+    # print(ret[0])
+    # time.sleep(1)
 
-    robot.apply_io_settings(result)
+    # robot.apply_io_settings(result)
     
-    robot.disable_robot()
-    robot.power_off()
+    # robot.disable_robot()
+    # robot.power_off()
     
-    # Logout
-    robot.logout()
+    # # Logout
+    # robot.logout()
     

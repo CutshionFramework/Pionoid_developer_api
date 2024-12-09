@@ -2355,21 +2355,16 @@ def test(test_count):
     AuboRobot.initialize()
 
     # 로봇 컨트롤러 클래스 생성
-    robot = AuboRobot()
-
-    # 컨텍스트 생성
-    handle = robot.create_context()
-
-    # 컨텍스트 출력
-    logger.info("robot.rshd={0}".format(handle))
-
+    
     try:
-        # 서버 연결
-        #ip = 'localhost'
-        ip = '192.168.19.129'
-
-        port = 8899
-        result = robot.login(ip, port)
+        robot = AuboRobot('192.168.19.129')
+        handle = robot.create_context()
+        ip = robot.ip
+        port = robot.port
+        
+        # robot login
+        result = robot.login(ip,port)
+        print('IP = {0} / PORT = {1} / The robot has been connected!'.format(robot.ip,robot.port))
 
         if result != RobotErrorType.RobotError_SUCC:
             logger.info("{0}:{1} 서버 연결 실패.".format(ip, port))
@@ -2414,80 +2409,102 @@ def test(test_count):
 
                 # 전역 설정 파일 초기화
                 robot.init_profile()
-
+                
                 # 관절 최대 가속도 설정
                 robot.set_joint_maxacc((1.5, 1.5, 1.5, 1.5, 1.5, 1.5))
 
                 # 관절 최대 가속도 설정
                 robot.set_joint_maxvelc((1.5, 1.5, 1.5, 1.5, 1.5, 1.5))
+                
+                # move robot to zero position
+                joint_pos = (0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000)
+                print('reset to zero {0} '.format(joint_pos))
+                robot.joint_move(joint_pos)
+                
+                # joint movement 1
+                joint_pos = (1.255, 1.745, 1.157, 1.457, 1.956, -1.345)
+                print('move joint to {0} '.format(joint_pos))
+                robot.joint_move(joint_pos)
+                    
+                # joint movement 2
+                joint_pos = (1.347,0,1.944,1.246,-1.573,0.5345)
+                print('move joint to {0} '.format(joint_pos))
+                robot.joint_move(joint_pos)
+                    
+                # move robot to zero position
+                joint_pos = (0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000)
+                print('reset to zero {0} '.format(joint_pos))
+                robot.joint_move(joint_pos)
 
-                joint_radian = (0.6, 0.4, -0.948709, -0.397018, -1.570800, 0.541673)
-                logger.info("관절을 {0} 위치로 이동".format(joint_radian))
+                
 
-                robot.joint_move(joint_radian)
+                # joint_radian = (0.6, 0.4, -0.948709, -0.397018, -1.570800, 0.541673)
+                # logger.info("관절을 {0} 위치로 이동".format(joint_radian))
 
-                # 관절 최대 가속도 가져오기
-                logger.info(robot.get_joint_maxacc())
+                # robot.joint_move(joint_radian)
 
-                # 순방향 운동학 테스트
-                fk_ret = robot.forward_kin((-0.000003, -0.127267, -1.321122, 0.376934, -1.570796, -0.000008))
-                logger.info(fk_ret)
+                # # 관절 최대 가속도 가져오기
+                # logger.info(robot.get_joint_maxacc())
 
-                # 역방향 운동학
-                joint_radian = (0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000)
-                ik_result = robot.inverse_kin(joint_radian, fk_ret['pos'], fk_ret['ori'])
-                logger.info(ik_result)
+                # # 순방향 운동학 테스트
+                # fk_ret = robot.forward_kin((-0.000003, -0.127267, -1.321122, 0.376934, -1.570796, -0.000008))
+                # logger.info(fk_ret)
 
-                # 관절 움직임 1
-                joint_radian = (0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000)
-                logger.info("관절을 {0} 위치로 이동".format(joint_radian))
-                robot.joint_move(joint_radian)
+                # # 역방향 운동학
+                # joint_radian = (0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000)
+                # ik_result = robot.inverse_kin(joint_radian, fk_ret['pos'], fk_ret['ori'])
+                # logger.info(ik_result)
 
-                # 관절 움직임 2
-                joint_radian = (0.541678, 0.225068, -0.948709, 0.397018, -1.570800, 0.541673)
-                logger.info("관절을 {0} 위치로 이동".format(joint_radian))
-                robot.joint_move(joint_radian)
+                # # 관절 움직임 1
+                # joint_radian = (0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000)
+                # logger.info("관절을 {0} 위치로 이동".format(joint_radian))
+                # robot.joint_move(joint_radian)
 
-                # 관절 움직임 3
-                joint_radian = (-0.000003, -0.127267, -1.321122, 0.376934, -1.570796, -0.000008)
-                logger.info("관절을 {0} 위치로 이동".format(joint_radian))
-                robot.joint_move(joint_radian)
+                # # 관절 움직임 2
+                # joint_radian = (0.541678, 0.225068, -0.948709, 0.397018, -1.570800, 0.541673)
+                # logger.info("관절을 {0} 위치로 이동".format(joint_radian))
+                # robot.joint_move(joint_radian)
 
-                # 로봇 끝부분 최대 선형 가속도 설정 (m/s)
-                robot.set_end_max_line_acc(0.5)
+                # # 관절 움직임 3
+                # joint_radian = (-0.000003, -0.127267, -1.321122, 0.376934, -1.570796, -0.000008)
+                # logger.info("관절을 {0} 위치로 이동".format(joint_radian))
+                # robot.joint_move(joint_radian)
 
-                # 로봇 끝부분 최대 선형 속도 설정 (m/s)
-                robot.set_end_max_line_velc(0.2)
+                # # 로봇 끝부분 최대 선형 가속도 설정 (m/s)
+                # robot.set_end_max_line_acc(0.5)
 
-                # 설정된 모든 전역 웨이포인트 제거
-                robot.remove_all_waypoint()
+                # # 로봇 끝부분 최대 선형 속도 설정 (m/s)
+                # robot.set_end_max_line_velc(0.2)
 
-                # 전역 웨이포인트 1 추가, 궤적 운동을 위해 사용
-                joint_radian = (-0.000003, -0.127267, -1.321122, 0.376934, -1.570796, -0.000008)
-                robot.add_waypoint(joint_radian)
+                # # 설정된 모든 전역 웨이포인트 제거
+                # robot.remove_all_waypoint()
 
-                # 전역 웨이포인트 2 추가, 궤적 운동을 위해 사용
-                joint_radian = (-0.211675, -0.325189, -1.466753, 0.429232, -1.570794, -0.211680)
-                robot.add_waypoint(joint_radian)
+                # # 전역 웨이포인트 1 추가, 궤적 운동을 위해 사용
+                # joint_radian = (-0.000003, -0.127267, -1.321122, 0.376934, -1.570796, -0.000008)
+                # robot.add_waypoint(joint_radian)
 
-                # 전역 웨이포인트 3 추가, 궤적 운동을 위해 사용
-                joint_radian = (-0.037186, -0.224307, -1.398285, 0.396819, -1.570796, -0.037191)
-                robot.add_waypoint(joint_radian)
+                # # 전역 웨이포인트 2 추가, 궤적 운동을 위해 사용
+                # joint_radian = (-0.211675, -0.325189, -1.466753, 0.429232, -1.570794, -0.211680)
+                # robot.add_waypoint(joint_radian)
 
-                # 원 운동 횟수 설정
-                robot.set_circular_loop_times(3)
+                # # 전역 웨이포인트 3 추가, 궤적 운동을 위해 사용
+                # joint_radian = (-0.037186, -0.224307, -1.398285, 0.396819, -1.570796, -0.037191)
+                # robot.add_waypoint(joint_radian)
 
-                # 원호 운동
-                logger.info("move_track ARC_CIR")
-                robot.move_track(RobotMoveTrackType.ARC_CIR)
+                # # 원 운동 횟수 설정
+                # robot.set_circular_loop_times(3)
 
-                # 설정된 모든 전역 웨이포인트 제거
-                robot.remove_all_waypoint()
+                # # 원호 운동
+                # logger.info("move_track ARC_CIR")
+                # robot.move_track(RobotMoveTrackType.ARC_CIR)
 
-                # 로봇 관절을 0 위치로 이동
-                joint_radian = (0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000)
-                logger.info("관절을 {0} 위치로 이동".format(joint_radian))
-                robot.joint_move(joint_radian)
+                # # 설정된 모든 전역 웨이포인트 제거
+                # robot.remove_all_waypoint()
+
+                # # 로봇 관절을 0 위치로 이동
+                # joint_radian = (0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000)
+                # logger.info("관절을 {0} 위치로 이동".format(joint_radian))
+                # robot.joint_move(joint_radian)
 
             # 서버 연결 해제
             robot.logout()
@@ -2504,8 +2521,8 @@ def test(test_count):
             # 로봇 연결 해제
             robot.logout()
         # 라이브러리 자원 해제
-        Auboi5Robot.uninitialize()
-        logger.info("{0} 테스트 완료.".format(Auboi5Robot.get_local_time()))  
+        AuboRobot.uninitialize()
+        logger.info("{0} 테스트 완료.".format(AuboRobot.get_local_time()))  
 
 def step_test():
     # 로거 초기화
@@ -2998,36 +3015,47 @@ if __name__ == '__main__':
     
     # robot login
     robot.login(ip,port)
-    print('IP = {0} / PORT = {1} / The robot has been connected!'.format(robot.ip,robot.port))
+    # print('IP = {0} / PORT = {1} / The robot has been connected!'.format(robot.ip,robot.port))
     
     # robot power on
     robot.power_on()
-    print('The robot has been powered.')
+    # print('The robot has been powered.')
+    # # joint movement 1
+    joint_pos = (-0.000003, -0.127267, -1.321122, 0.376934, -1.570796, -0.000008)
+    # print('move joint to {0} '.format(joint_pos))
     
-    # joint movement 1
-    joint_pos = (0.6, 0.4, -0.948709, -0.397018, -1.570800, 0.541673)
-    print('move joint to {0} '.format(joint_pos))
-    robot.joint_move(joint_pos)
+    # robot.set_joint_maxacc((1.5, 1.5, 1.5, 1.5, 1.5, 1.5))
+    robot.set_joint_maxvelc((1.5, 1.5, 1.5, 1.5, 1.5, 1.5))
+    start_time = time.perf_counter()
     
-    # move robot to zero position
-    joint_pos = (0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000)
-    print('reset to zero {0} '.format(joint_pos))
     robot.joint_move(joint_pos)
+    robot.get_tcp_position()
     
-    # joint movement 2
-    joint_pos = (0.541678, 0.225068, -0.948709, 0.397018, -1.570800, 0.541673)
-    print('move joint to {0} '.format(joint_pos))
-    robot.joint_move(joint_pos)
+    end_time = time.perf_counter()
+    
+    execution_time = end_time - start_time
+    print(f"Execution time: {execution_time:.6f}s")
+                  
+    home_pos = (0,0,0,0,0,0)
+    # logger.info("move joint to {0}".format(joint_radian))
+    robot.joint_move(home_pos)
+    
+    print("Test End")
+        
+    # # joint movement 2
+    # joint_pos = (1.347,0,1.944,1.246,-1.573,0.5345)
+    # print('move joint to {0} '.format(joint_pos))
+    # robot.joint_move(joint_pos)
           
-    # move robot to zero position
-    joint_pos = (0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000)
-    print('reset to zero {0} '.format(joint_pos))
-    robot.joint_move(joint_pos)
+    # # move robot to zero position
+    # joint_pos = (0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000)
+    # print('reset to zero {0} '.format(joint_pos))
+    # robot.joint_move(joint_pos)
     
-    # disconnected robot
-    robot.logout()
-    print('The robot has been disconnected.')
-    print('{0} Test has been completed.'.format(robot.get_local_time()))  
+    # # disconnected robot
+    # robot.logout()
+    # print('The robot has been disconnected.')
+    # print('{0} Test has been completed.'.format(robot.get_local_time()))  
 
 
 

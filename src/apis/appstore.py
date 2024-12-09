@@ -57,7 +57,14 @@ def download():
 
         # Docker Desktop 설치 여부 확인
         if not is_docker_installed():
-            return jsonify({"message": "Docker Desktop not installed. Please install it manually."}), 500
+            # Docker Desktop 자동 설치 시도
+            install_success = install_docker_desktop()
+            if not install_success:
+                return jsonify({"message": "Docker Desktop installation failed. Please install it manually."}), 500
+
+            # 설치 후 재확인
+            if not is_docker_installed():
+                return jsonify({"message": "Docker Desktop is still not installed after the attempt."}), 500
 
         # Docker Desktop 실행 여부 확인
         if not is_docker_daemon_ready():
@@ -75,6 +82,7 @@ def download():
         if result.returncode == 0:
             return jsonify({"message": "Download successful", "output": result.stdout}), 200
         else:
+            print(f"Error pulling image: {result.stderr}")
             return jsonify({"message": "Download failed", "error": result.stderr}), 500
     except Exception as e:
         return jsonify({"message": "Error occurred", "error": str(e)}), 500
@@ -140,4 +148,36 @@ def open_docker():
     except Exception as e:
         return jsonify({"message": "Error occurred while opening Docker Desktop and starting container", "error": str(e)}), 500
 
+
+# @appstore.route('/api/get_app_state', methods=['GET'])
+# def get_app_state():
+#     try:
+#         # Docker Desktop 설치 여부 확인
+#         if not is_docker_installed():
+#             return jsonify({"message": "Docker Desktop is not installed. Please install it first."}), 400
+
+#         # Docker Desktop 실행 여부 확인
+#         if not is_docker_daemon_ready():
+#             docker_desktop_path = r"C:\Program Files\Docker\Docker\Docker Desktop.exe"
+#             subprocess.Popen(docker_desktop_path, shell=True)
+#             time.sleep(10)  # Docker 데몬이 실행될 시간을 기다림
+
+#             if not is_docker_daemon_ready():
+#                 return jsonify({"message": "Docker daemon is not ready. Please wait and try again."}), 500
+
+#         # 다운로드된 Docker 이미지 목록 확인
+#         result = subprocess.run(
+#             ["docker", "images", "--format", "{{.Repository}}:{{.Tag}}"],
+#             capture_output=True, text=True
+#         )
+
+#         if result.returncode != 0:
+#             return jsonify({"message": "Failed to retrieve images", "error": result.stderr}), 500
+
+#         # 이미지 정보 파싱
+#         images = result.stdout.strip().split('\n') if result.stdout.strip() else []
+#         return jsonify({"message": "Docker is ready", "images": images}), 200
+
+#     except Exception as e:
+#         return jsonify({"message": "Error occurred", "error": str(e)}), 500
 

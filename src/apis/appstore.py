@@ -1,11 +1,17 @@
 import subprocess
-from flask import Blueprint, jsonify
+from flask import Blueprint, jsonify, request
 import time
 import requests
 import os
 import webbrowser
 
 appstore = Blueprint('appstore', __name__)
+
+# 미리 설정한 image_name과 container_name의 대응 딕셔너리
+image_to_container_mapping = {
+    "sromerof202/palletizing_app-server:latest": "palletizing_app_server",
+    "another_image_name:latest": "another_container_name",
+}
 
 # Docker Desktop 설치 여부 확인 함수
 def is_docker_installed():
@@ -42,12 +48,16 @@ def install_docker_desktop():
 @appstore.route('/api/download', methods=['POST'])
 def download():
     try:
+        # 클라이언트에서 받은 JSON 데이터에서 image_name 추출
+        data = request.get_json()
+        image_name = data.get('image_name')
+
+        if not image_name:
+            return jsonify({"message": "image_name is required"}), 400
+
         # Docker Desktop 설치 여부 확인
         if not is_docker_installed():
             return jsonify({"message": "Docker Desktop not installed. Please install it manually."}), 500
-
-        else:
-            print("도커 다운되어있는 상태")
 
         # Docker Desktop 실행 여부 확인
         if not is_docker_daemon_ready():
@@ -58,8 +68,6 @@ def download():
             if not is_docker_daemon_ready():
                 return jsonify({"message": "Docker daemon is not ready. Please wait and try again."}), 500
 
-        # Docker 이미지 다운로드
-        image_name = "sromerof202/palletizing_app-server:latest"
         result = subprocess.run(
             ["docker", "pull", image_name],
             capture_output=True, text=True
@@ -74,6 +82,18 @@ def download():
 @appstore.route('/api/open', methods=['POST'])
 def open_docker():
     try:
+        data = request.get_json()
+        image_name = data.get('image_name')
+
+        if not image_name:
+            return jsonify({"message": "image_name is required"}), 400
+
+        # 이미지에 대응되는 컨테이너 이름 찾기
+        container_name = image_to_container_mapping.get(image_name)
+
+        if not container_name:
+            return jsonify({"message": f"No container mapping found for image: {image_name}"}), 400
+
         # Docker Desktop 실행 파일 경로
         docker_desktop_path = r"C:\Program Files\Docker\Docker\Docker Desktop.exe"
 
@@ -91,10 +111,6 @@ def open_docker():
         # Docker 데몬 상태 확인
         if not is_docker_daemon_ready():
             return jsonify({"message": "Docker daemon is not ready. Please wait and try again."}), 500
-
-        # 컨테이너 이름 설정
-        container_name = "palletizing_app_server"
-        image_name = "sromerof202/palletizing_app-server:latest"
 
         # 기존 컨테이너가 있는지 확인
         check_container_result = subprocess.run(

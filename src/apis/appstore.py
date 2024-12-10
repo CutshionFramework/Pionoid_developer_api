@@ -12,6 +12,43 @@ image_to_container_mapping = {
     "another_image_name:latest": "another_container_name",
 }
 
+image_to_image_id_mapping = {
+    "sromerof202/palletizing_app-server:latest": "palletizing-robot",
+    "another_image_name:latest": "another_container_name",
+}
+
+# 앱 목록 정의
+app_list = [
+    {
+        "id": 1,
+        "image_id": "gom-cook",
+        "name": "Gom Cook",
+        "description": "A cooking robot that supports personalized customized cooking",
+        "app_state": "Get"
+    },
+    {
+        "id": 2,
+        "image_id": "drawing-robot",
+        "name": "Drawing Robot",
+        "description": "A robot that draws pictures by recognizing photos taken with a camera",
+        "app_state": "Get"
+    },
+    {
+        "id": 3,
+        "image_id": "palletizing-robot",
+        "name": "Palletizing Robot",
+        "description": "A robot for stacking books in a publishing factory",
+        "app_state": "Get"
+    },
+    {
+        "id": 4,
+        "image_id": "welding-robot",
+        "name": "Welding Robot",
+        "description": "A robot that performs hazardous welding tasks in place of humans",
+        "app_state": "Get"
+    }
+]
+
 def get_default_download_path():
     if os.name == "nt":  # Windows
         return os.path.join(os.environ["USERPROFILE"], "Downloads")
@@ -186,35 +223,48 @@ def open_docker():
         return jsonify({"message": "Error occurred while opening Docker Desktop and starting container", "error": str(e)}), 500
 
 
-# @appstore.route('/api/get_app_state', methods=['GET'])
-# def get_app_state():
-#     try:
-#         # Docker Desktop 설치 여부 확인
-#         if not is_docker_installed():
-#             return jsonify({"message": "Docker Desktop is not installed. Please install it first."}), 400
+@appstore.route('/api/get_app_state', methods=['GET'])
+def get_app_state():
+    try:
+        global app_list
 
-#         # Docker Desktop 실행 여부 확인
-#         if not is_docker_daemon_ready():
-#             docker_desktop_path = r"C:\Program Files\Docker\Docker\Docker Desktop.exe"
-#             subprocess.Popen(docker_desktop_path, shell=True)
-#             time.sleep(10)  # Docker 데몬이 실행될 시간을 기다림
+        # Docker Desktop 설치 여부 확인
+        if not is_docker_installed():
+            return jsonify({"message": "Docker Desktop is not installed. Please install it first."}), 400
 
-#             if not is_docker_daemon_ready():
-#                 return jsonify({"message": "Docker daemon is not ready. Please wait and try again."}), 500
+        # Docker Desktop 실행 여부 확인
+        if not is_docker_daemon_ready():
+            docker_desktop_path = r"C:\Program Files\Docker\Docker\Docker Desktop.exe"
+            subprocess.Popen(docker_desktop_path, shell=True)
+            time.sleep(10)  # Docker 데몬이 실행될 시간을 기다림
 
-#         # 다운로드된 Docker 이미지 목록 확인
-#         result = subprocess.run(
-#             ["docker", "images", "--format", "{{.Repository}}:{{.Tag}}"],
-#             capture_output=True, text=True
-#         )
+            if not is_docker_daemon_ready():
+                return jsonify({"message": "Docker daemon is not ready. Please wait and try again."}), 500
 
-#         if result.returncode != 0:
-#             return jsonify({"message": "Failed to retrieve images", "error": result.stderr}), 500
+        # 다운로드된 Docker 이미지 목록 확인
+        result = subprocess.run(
+            ["docker", "images", "--format", "{{.Repository}}:{{.Tag}}"],
+            capture_output=True, text=True
+        )
 
-#         # 이미지 정보 파싱
-#         images = result.stdout.strip().split('\n') if result.stdout.strip() else []
-#         return jsonify({"message": "Docker is ready", "images": images}), 200
+        if result.returncode != 0:
+            return jsonify({"message": "Failed to retrieve images", "error": result.stderr}), 500
 
-#     except Exception as e:
-#         return jsonify({"message": "Error occurred", "error": str(e)}), 500
+        # 현재 Docker 이미지 목록
+        images = result.stdout.strip().split('\n') if result.stdout.strip() else []
+        print("images : ", images)
+
+       # Docker 이미지에 따라 상태 업데이트
+        for app in app_list:
+            # image_to_image_id_mapping을 사용하여 이미지 매핑 확인
+            for image_name, image_id in image_to_image_id_mapping.items():
+                if image_name in images and app["image_id"] == image_id:
+                    app["app_state"] = "Run"
+                    print(app_list)
+
+        return jsonify({"message": "App state retrieved successfully", "apps": app_list}), 200
+
+    except Exception as e:
+        return jsonify({"message": "Error occurred", "error": str(e)}), 500
+
 

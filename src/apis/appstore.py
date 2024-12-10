@@ -1,7 +1,6 @@
 import subprocess
 from flask import Blueprint, jsonify, request
 import time
-import requests
 import os
 import webbrowser
 
@@ -12,6 +11,14 @@ image_to_container_mapping = {
     "sromerof202/palletizing_app-server:latest": "palletizing_app_server",
     "another_image_name:latest": "another_container_name",
 }
+
+def get_default_download_path():
+    if os.name == "nt":  # Windows
+        return os.path.join(os.environ["USERPROFILE"], "Downloads")
+    # elif os.name == "posix":  # macOS/Linux
+    #     return os.path.join(os.path.expanduser("~"), "Downloads")
+    else:
+        return None
 
 # Docker Desktop 설치 여부 확인 함수
 def is_docker_installed():
@@ -29,16 +36,35 @@ def is_docker_daemon_ready():
 # Docker Desktop 자동 설치 함수 (옵션)
 def install_docker_desktop():
     installer_url = "https://desktop.docker.com/win/stable/Docker Desktop Installer.exe"  # Docker Desktop 설치 파일 URL
-    installer_path = r"C:\temp\Docker Desktop Installer.exe"
-    try:
-        # 다운로드
-        response = requests.get(installer_url, stream=True)
-        with open(installer_path, 'wb') as file:
-            for chunk in response.iter_content(chunk_size=1024):
-                file.write(chunk)
+    installer_path = os.path.join(get_default_download_path(), "Docker Desktop Installer.exe")
+    print(f"installer path: {installer_path}")
 
-        # 설치 실행
-        subprocess.run([installer_path, "--quiet", "--install"], check=True)
+    docker_exe_path = r"C:\Program Files\Docker\Docker\Docker Desktop.exe"  # 설치된 실행 파일 경로
+
+    try:
+        # 다운로드된 설치 파일이 이미 존재하는지 확인
+        if not os.path.exists(installer_path):
+            # 브라우저로 다운로드 페이지 열기
+            print("Installer not found. Opening the Docker Desktop download page in your browser...")
+            webbrowser.open(installer_url)
+
+            # 다운로드된 인스톨러가 설치될 때까지 기다림
+            while not os.path.exists(installer_path):
+                print("Waiting for Docker Desktop installer to download...")
+                time.sleep(10)  # 10초 대기
+        else:
+            print("Installer already exists. Skipping download.")
+
+        # 다운로드된 설치 파일 실행
+        subprocess.run([installer_path], check=True)
+
+        # 설치 완료를 기다림 (Docker 실행 파일이 존재하는지 확인)
+        while not os.path.exists(docker_exe_path):
+            print("Waiting for Docker Desktop installation to complete...")
+            time.sleep(10)  # 10초 대기
+
+        print("Docker Desktop installation detected.")
+
         return True
     except Exception as e:
         print(f"Failed to download or install Docker Desktop: {e}")
@@ -116,9 +142,19 @@ def open_docker():
         else:
             print("Docker Desktop is already running.")
 
-        # Docker 데몬 상태 확인
-        if not is_docker_daemon_ready():
-            return jsonify({"message": "Docker daemon is not ready. Please wait and try again."}), 500
+        # Docker 데몬 상태 확인 (최대 2분 대기)
+        max_wait_time = 120  # 최대 대기 시간(초)
+        interval = 5  # 상태 확인 간격(초)
+        elapsed_time = 0
+
+        while not is_docker_daemon_ready():
+            if elapsed_time >= max_wait_time:
+                return jsonify({"message": "Docker daemon did not become ready in time. Please try again later."}), 500
+            print("Waiting for Docker daemon to become ready...")
+            time.sleep(interval)
+            elapsed_time += interval
+
+        print("Docker daemon is ready.")
 
         # 기존 컨테이너가 있는지 확인
         check_container_result = subprocess.run(

@@ -15,10 +15,10 @@ image_to_container_mapping = {
 def get_default_download_path():
     if os.name == "nt":  # Windows
         return os.path.join(os.environ["USERPROFILE"], "Downloads")
-    # elif os.name == "posix":  # macOS/Linux
-    #     return os.path.join(os.path.expanduser("~"), "Downloads")
+    elif os.name == "posix":  # macOS/Linux
+        return os.path.join(os.path.expanduser("~"), "Downloads")
     else:
-        return None
+        raise NotImplementedError(f"Unsupported OS: {os.name}")
 
 # Docker Desktop 설치 여부 확인 함수
 def is_docker_installed():
@@ -171,9 +171,10 @@ def open_docker():
         else:
             # 컨테이너가 없으면 새로 실행
             start_container_result = subprocess.run(
-                ["docker", "run", "-d", "--name", container_name, image_name],  # -d는 백그라운드 실행
+                ["docker", "run", "-d", "--name", container_name, "-p", "5000:5000", image_name], 
                 capture_output=True, text=True
             )
+
 
         if start_container_result.returncode == 0:
             webbrowser.open("http://localhost:5000")
